@@ -38,15 +38,18 @@
 
       <main>
         <nav class="tab-nav" role="tablist" aria-label="Secciones de la aplicacion">
-          <button id="tabCapture" class="tab-button active" role="tab" aria-selected="true">
+          <button id="tabCapture" class="tab-button active" role="tab" aria-selected="true" aria-controls="captureScreen">
             Captura de Produccion
           </button>
-          <button id="tabDashboard" class="tab-button" role="tab" aria-selected="false">
+          <button id="tabDashboard" class="tab-button" role="tab" aria-selected="false" aria-controls="dashboardScreen">
             Dashboard
+          </button>
+          <button id="tabConsulta" class="tab-button" role="tab" aria-selected="false" aria-controls="consultaScreen">
+            Consulta
           </button>
         </nav>
 
-        <section id="captureScreen" class="screen active" role="tabpanel">
+        <section id="captureScreen" class="screen active" role="tabpanel" aria-labelledby="tabCapture">
           <article class="panel capture-panel">
             <h2>Registro de Produccion</h2>
             <p class="panel-note">
@@ -112,7 +115,7 @@
           </article>
         </section>
 
-        <section id="dashboardScreen" class="screen" role="tabpanel" aria-hidden="true">
+        <section id="dashboardScreen" class="screen" role="tabpanel" aria-labelledby="tabDashboard" aria-hidden="true">
           <article class="panel dashboard-panel">
             <div class="dashboard-header">
               <h2>Indicadores de Produccion</h2>
@@ -212,6 +215,8 @@
             </section>
           </article>
         </section>
+
+        <section id="consultaScreen" class="screen" role="tabpanel" aria-labelledby="tabConsulta" aria-hidden="true"></section>
       </main>
     </div>
 

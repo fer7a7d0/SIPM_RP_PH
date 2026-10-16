@@ -54,8 +54,10 @@ const DOM = {
   downloadCsvButton: document.getElementById("downloadCsvButton"),
   tabCapture: document.getElementById("tabCapture"),
   tabDashboard: document.getElementById("tabDashboard"),
+  tabConsulta: document.getElementById("tabConsulta"),
   captureScreen: document.getElementById("captureScreen"),
   dashboardScreen: document.getElementById("dashboardScreen"),
+  consultaScreen: document.getElementById("consultaScreen"),
   monthSelector: document.getElementById("monthSelector"),
   refreshDashboardButton: document.getElementById("refreshDashboardButton"),
   kpiTotalDay: document.getElementById("kpiTotalDay"),
@@ -95,6 +97,7 @@ function bindEvents() {
     activateScreen("dashboard");
     loadDashboard();
   });
+  DOM.tabConsulta.addEventListener("click", () => activateScreen("consulta"));
   DOM.refreshDashboardButton.addEventListener("click", loadDashboard);
   DOM.monthSelector.addEventListener("change", loadDashboard);
 }
@@ -144,16 +147,24 @@ function updateClock() {
 }
 
 function activateScreen(target) {
-  const captureActive = target === "capture";
-  DOM.captureScreen.classList.toggle("active", captureActive);
-  DOM.dashboardScreen.classList.toggle("active", !captureActive);
+  const screens = {
+    capture: DOM.captureScreen,
+    dashboard: DOM.dashboardScreen,
+    consulta: DOM.consultaScreen
+  };
+  const tabs = {
+    capture: DOM.tabCapture,
+    dashboard: DOM.tabDashboard,
+    consulta: DOM.tabConsulta
+  };
 
-  DOM.tabCapture.classList.toggle("active", captureActive);
-  DOM.tabDashboard.classList.toggle("active", !captureActive);
-
-  DOM.tabCapture.setAttribute("aria-selected", String(captureActive));
-  DOM.tabDashboard.setAttribute("aria-selected", String(!captureActive));
-  DOM.dashboardScreen.setAttribute("aria-hidden", String(captureActive));
+  Object.entries(screens).forEach(([name, screen]) => {
+    const isActive = name === target;
+    screen.classList.toggle("active", isActive);
+    screen.setAttribute("aria-hidden", String(!isActive));
+    tabs[name].classList.toggle("active", isActive);
+    tabs[name].setAttribute("aria-selected", String(isActive));
+  });
 }
 
 function renderStaticActivities() {
