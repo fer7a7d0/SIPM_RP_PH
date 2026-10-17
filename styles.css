@@ -246,27 +246,27 @@ textarea:focus {
 }
 
 .consultation-table .btn-small {
-  border: 1px solid #bcccdc;
+  border: 0;
+  border-radius: 4px;
   background: transparent;
-  color: var(--color-primary-dark);
+  color: var(--color-muted);
 }
 
 .consultation-table .btn-danger.btn-small {
-  border-color: #f0aaa5;
-  color: var(--color-danger);
+  color: var(--color-muted);
 }
 
 .consultation-table .btn-small:hover {
-  background: rgba(11, 110, 79, 0.1);
+  background: rgba(72, 101, 129, 0.1);
 }
 
 .consultation-table .btn-danger.btn-small:hover {
-  background: rgba(180, 35, 24, 0.1);
+  background: rgba(72, 101, 129, 0.1);
 }
 
 .consultation-table .btn-small svg {
-  width: 12px;
-  height: 12px;
+  width: 17px;
+  height: 17px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -880,14 +880,14 @@ thead th {
   }
 
   .consultation-table .btn-small {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     margin: 1px;
   }
 
   .consultation-table .btn-small svg {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
   }
 
   #consultationMessage {
