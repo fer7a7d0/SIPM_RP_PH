@@ -38,7 +38,9 @@ const APP_STATE = {
   },
   consultation: {
     records: [],
-    editingRecordId: ""
+    editingRecordId: "",
+    startCalendarMonth: "",
+    endCalendarMonth: ""
   },
   duplicateCache: new Set()
 };
@@ -60,17 +62,24 @@ const DOM = {
   tabDashboard: document.getElementById("tabDashboard"),
   tabConsulta: document.getElementById("tabConsulta"),
   consultationStartDate: document.getElementById("consultationStartDate"),
-  consultationStartDatePicker: document.getElementById("consultationStartDatePicker"),
   consultationStartDatePickerButton: document.getElementById("consultationStartDatePickerButton"),
+  consultationStartDateCalendar: document.getElementById("consultationStartDateCalendar"),
+  consultationStartDateMonthLabel: document.getElementById("consultationStartDateMonthLabel"),
+  consultationStartDateCalendarGrid: document.getElementById("consultationStartDateCalendarGrid"),
+  consultationStartDatePreviousMonth: document.getElementById("consultationStartDatePreviousMonth"),
+  consultationStartDateNextMonth: document.getElementById("consultationStartDateNextMonth"),
   consultationEndDate: document.getElementById("consultationEndDate"),
-  consultationEndDatePicker: document.getElementById("consultationEndDatePicker"),
   consultationEndDatePickerButton: document.getElementById("consultationEndDatePickerButton"),
+  consultationEndDateCalendar: document.getElementById("consultationEndDateCalendar"),
+  consultationEndDateMonthLabel: document.getElementById("consultationEndDateMonthLabel"),
+  consultationEndDateCalendarGrid: document.getElementById("consultationEndDateCalendarGrid"),
+  consultationEndDatePreviousMonth: document.getElementById("consultationEndDatePreviousMonth"),
+  consultationEndDateNextMonth: document.getElementById("consultationEndDateNextMonth"),
   consultationSearchButton: document.getElementById("consultationSearchButton"),
-  consultationModeMessage: document.getElementById("consultationModeMessage"),
   consultationMessage: document.getElementById("consultationMessage"),
-  consultationTotal: document.getElementById("consultationTotal"),
   consultationTableHead: document.getElementById("consultationTableHead"),
   consultationTableBody: document.getElementById("consultationTableBody"),
+  consultationTableFoot: document.getElementById("consultationTableFoot"),
   recordEditor: document.getElementById("recordEditor"),
   recordEditorForm: document.getElementById("recordEditorForm"),
   recordEditorDate: document.getElementById("recordEditorDate"),
@@ -130,16 +139,26 @@ function bindEvents() {
     const today = formatDateForMexico(formatDateKey(new Date()));
     DOM.consultationStartDate.value = today;
     DOM.consultationEndDate.value = "";
-    DOM.consultationEndDatePicker.value = "";
+    closeConsultationDateCalendars();
     loadConsultation();
   });
   DOM.consultationSearchButton.addEventListener("click", () => loadConsultation());
   DOM.consultationStartDate.addEventListener("change", invalidateConsultationResults);
   DOM.consultationEndDate.addEventListener("change", invalidateConsultationResults);
-  DOM.consultationStartDatePickerButton.addEventListener("click", () => openConsultationDatePicker("start"));
-  DOM.consultationEndDatePickerButton.addEventListener("click", () => openConsultationDatePicker("end"));
-  DOM.consultationStartDatePicker.addEventListener("change", () => syncConsultationDatePicker("start"));
-  DOM.consultationEndDatePicker.addEventListener("change", () => syncConsultationDatePicker("end"));
+  DOM.consultationStartDatePickerButton.addEventListener("click", () => openConsultationDateCalendar("start"));
+  DOM.consultationEndDatePickerButton.addEventListener("click", () => openConsultationDateCalendar("end"));
+  DOM.consultationStartDateCalendarGrid.addEventListener("click", (event) => onConsultationCalendarClick(event, "start"));
+  DOM.consultationEndDateCalendarGrid.addEventListener("click", (event) => onConsultationCalendarClick(event, "end"));
+  DOM.consultationStartDatePreviousMonth.addEventListener("click", () => shiftConsultationCalendarMonth("start", -1));
+  DOM.consultationStartDateNextMonth.addEventListener("click", () => shiftConsultationCalendarMonth("start", 1));
+  DOM.consultationEndDatePreviousMonth.addEventListener("click", () => shiftConsultationCalendarMonth("end", -1));
+  DOM.consultationEndDateNextMonth.addEventListener("click", () => shiftConsultationCalendarMonth("end", 1));
+  document.addEventListener("click", onConsultationCalendarOutsideClick);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeConsultationDateCalendars();
+    }
+  });
   DOM.consultationTableBody.addEventListener("click", onConsultationAction);
   DOM.recordEditorForm.addEventListener("submit", onSaveRecordChanges);
   DOM.cancelRecordEditButton.addEventListener("click", () => DOM.recordEditor.close());
@@ -161,23 +180,130 @@ function formatDateForMexico(dateKey) {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : "";
 }
 
-function openConsultationDatePicker(which) {
+function openConsultationDateCalendar(which) {
   const textInput = which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
-  const datePicker = which === "start" ? DOM.consultationStartDatePicker : DOM.consultationEndDatePicker;
-  datePicker.value = parseMexicoDate(textInput.value);
+  const calendar = which === "start" ? DOM.consultationStartDateCalendar : DOM.consultationEndDateCalendar;
+  const button = which === "start" ? DOM.consultationStartDatePickerButton : DOM.consultationEndDatePickerButton;
+  const selectedDate = parseMexicoDate(textInput.value);
+  const month = selectedDate ? selectedDate.slice(0, 7) : formatDateKey(new Date()).slice(0, 7);
 
-  if (typeof datePicker.showPicker === "function") {
-    datePicker.showPicker();
-  } else {
-    datePicker.focus();
-    datePicker.click();
+  closeConsultationDateCalendars();
+  setConsultationCalendarMonth(which, month);
+  calendar.hidden = false;
+  button.setAttribute("aria-expanded", "true");
+  renderConsultationDateCalendar(which);
+}
+
+function closeConsultationDateCalendars() {
+  DOM.consultationStartDateCalendar.hidden = true;
+  DOM.consultationEndDateCalendar.hidden = true;
+  DOM.consultationStartDatePickerButton.setAttribute("aria-expanded", "false");
+  DOM.consultationEndDatePickerButton.setAttribute("aria-expanded", "false");
+}
+
+function onConsultationCalendarOutsideClick(event) {
+  if (!event.target.closest(".date-picker-control")) {
+    closeConsultationDateCalendars();
   }
 }
 
-function syncConsultationDatePicker(which) {
-  const textInput = which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
-  const datePicker = which === "start" ? DOM.consultationStartDatePicker : DOM.consultationEndDatePicker;
-  textInput.value = formatDateForMexico(datePicker.value);
+function setConsultationCalendarMonth(which, monthKey) {
+  if (which === "start") {
+    APP_STATE.consultation.startCalendarMonth = monthKey;
+  } else {
+    APP_STATE.consultation.endCalendarMonth = monthKey;
+  }
+}
+
+function getConsultationCalendarMonth(which) {
+  return which === "start"
+    ? APP_STATE.consultation.startCalendarMonth
+    : APP_STATE.consultation.endCalendarMonth;
+}
+
+function shiftConsultationCalendarMonth(which, delta) {
+  const currentMonth = getConsultationCalendarMonth(which);
+  const [year, month] = currentMonth.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1 + delta, 1));
+  setConsultationCalendarMonth(which, `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}`);
+  renderConsultationDateCalendar(which);
+}
+
+function renderConsultationDateCalendar(which) {
+  const monthKey = getConsultationCalendarMonth(which);
+  const [year, month] = monthKey.split("-").map(Number);
+  const selectedDate = parseMexicoDate((which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate).value);
+  const calendar = which === "start" ? DOM.consultationStartDateCalendar : DOM.consultationEndDateCalendar;
+  const monthLabel = which === "start" ? DOM.consultationStartDateMonthLabel : DOM.consultationEndDateMonthLabel;
+  const grid = which === "start" ? DOM.consultationStartDateCalendarGrid : DOM.consultationEndDateCalendarGrid;
+  const monthDate = new Date(Date.UTC(year, month - 1, 1));
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const mondayOffset = (monthDate.getUTCDay() + 6) % 7;
+
+  monthLabel.textContent = new Intl.DateTimeFormat("es-MX", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC"
+  }).format(monthDate);
+  grid.replaceChildren();
+
+  ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].forEach((weekday) => {
+    const heading = document.createElement("span");
+    heading.className = "calendar-weekday";
+    heading.textContent = weekday;
+    grid.appendChild(heading);
+  });
+
+  for (let blank = 0; blank < mondayOffset; blank += 1) {
+    const emptyCell = document.createElement("span");
+    emptyCell.className = "calendar-empty";
+    emptyCell.setAttribute("aria-hidden", "true");
+    grid.appendChild(emptyCell);
+  }
+
+  const today = formatDateKey(new Date());
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const dateKey = `${monthKey}-${String(day).padStart(2, "0")}`;
+    const date = new Date(Date.UTC(year, month - 1, day));
+    const dayButton = document.createElement("button");
+    dayButton.type = "button";
+    dayButton.className = "calendar-day";
+    dayButton.dataset.date = dateKey;
+    dayButton.textContent = String(day);
+    dayButton.setAttribute("aria-label", new Intl.DateTimeFormat("es-MX", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC"
+    }).format(date));
+    if (dateKey === selectedDate) {
+      dayButton.classList.add("selected");
+      dayButton.setAttribute("aria-pressed", "true");
+    }
+    if (dateKey === today) {
+      dayButton.classList.add("today");
+    }
+    grid.appendChild(dayButton);
+  }
+
+  while (grid.children.length % 7 !== 0) {
+    const emptyCell = document.createElement("span");
+    emptyCell.className = "calendar-empty";
+    emptyCell.setAttribute("aria-hidden", "true");
+    grid.appendChild(emptyCell);
+  }
+  calendar.setAttribute("aria-label", `Calendario de fecha ${which === "start" ? "inicial" : "final"}, ${monthLabel.textContent}`);
+}
+
+function onConsultationCalendarClick(event, which) {
+  const dayButton = event.target.closest("button[data-date]");
+  if (!dayButton) {
+    return;
+  }
+  const input = which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
+  input.value = formatDateForMexico(dayButton.dataset.date);
+  closeConsultationDateCalendars();
   invalidateConsultationResults();
 }
 
@@ -528,10 +654,9 @@ async function loadConsultation(successMessage) {
   const isSingleDate = !endDate;
   DOM.consultationSearchButton.disabled = true;
   DOM.consultationTableBody.replaceChildren();
+  DOM.consultationTableHead.replaceChildren();
+  DOM.consultationTableFoot.replaceChildren();
   setConsultationMessage("Cargando registros...", "");
-  DOM.consultationModeMessage.textContent = isSingleDate
-    ? `Registros individuales del ${formatDateForMexico(startDate)}. Puedes editarlos o eliminarlos.`
-    : `Cantidades acumuladas del ${formatDateForMexico(startDate)} al ${formatDateForMexico(endDate)}. Esta consulta es de solo lectura.`;
 
   try {
     const records = isSingleDate
@@ -539,9 +664,7 @@ async function loadConsultation(successMessage) {
       : await callApi("getRecordsByDateRange", { startDate, endDate });
     APP_STATE.consultation.records = Array.isArray(records) ? records : [];
     renderConsultation(isSingleDate);
-    setConsultationMessage(successMessage || (APP_STATE.consultation.records.length
-      ? `${APP_STATE.consultation.records.length} registro(s) encontrado(s).`
-      : "No hay registros para el periodo seleccionado."), successMessage ? "success" : "");
+    setConsultationMessage(successMessage || "", successMessage ? "success" : "");
   } catch (error) {
     console.error(error);
     APP_STATE.consultation.records = [];
@@ -556,38 +679,30 @@ function invalidateConsultationResults() {
   APP_STATE.consultation.records = [];
   DOM.consultationTableHead.replaceChildren();
   DOM.consultationTableBody.replaceChildren();
-  DOM.consultationTotal.textContent = "0";
-
-  const startDate = parseMexicoDate(DOM.consultationStartDate.value);
-  const endDateValue = DOM.consultationEndDate.value.trim();
-  const endDate = endDateValue ? parseMexicoDate(endDateValue) : "";
-  if (!startDate || (endDateValue && !endDate) || (endDate && startDate > endDate)) {
-    DOM.consultationModeMessage.textContent = "Ingresa una fecha Desde valida y, si deseas un rango, una fecha Hasta igual o posterior.";
-  } else if (!endDate) {
-    DOM.consultationModeMessage.textContent = `Fecha seleccionada: ${formatDateForMexico(startDate)}. Presiona Consultar para ver sus registros.`;
-  } else {
-    DOM.consultationModeMessage.textContent = `Rango seleccionado: ${formatDateForMexico(startDate)} al ${formatDateForMexico(endDate)}. La consulta sera de solo lectura.`;
-  }
+  DOM.consultationTableFoot.replaceChildren();
   setConsultationMessage("", "");
 }
 
 function renderConsultation(isSingleDate) {
   const headers = isSingleDate
-    ? ["Actividad", "Cantidad", "Acciones"]
+    ? ["Actividad", "Cantidad", ""]
     : ["Actividad", "Cantidad acumulada"];
   DOM.consultationTableHead.replaceChildren();
   DOM.consultationTableBody.replaceChildren();
+  DOM.consultationTableFoot.replaceChildren();
 
   const headerRow = document.createElement("tr");
   headers.forEach((text) => {
     const th = document.createElement("th");
     th.textContent = text;
+    if (isSingleDate && text === "") {
+      th.setAttribute("aria-label", "Acciones");
+    }
     headerRow.appendChild(th);
   });
   DOM.consultationTableHead.appendChild(headerRow);
 
   const total = APP_STATE.consultation.records.reduce((sum, record) => sum + Number(record.quantity || 0), 0);
-  DOM.consultationTotal.textContent = String(total);
 
   if (!isSingleDate) {
     const groups = new Map();
@@ -636,7 +751,7 @@ function renderConsultation(isSingleDate) {
         editButton.dataset.id = record.id;
         editButton.setAttribute("aria-label", "Editar registro");
         editButton.title = "Editar";
-        editButton.textContent = "✎";
+        editButton.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="m14 5 5 5M4 20l4-.8L19 8.2 15.8 5 4.8 16 4 20Z"></path></svg>';
 
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
@@ -645,7 +760,7 @@ function renderConsultation(isSingleDate) {
         deleteButton.dataset.id = record.id;
         deleteButton.setAttribute("aria-label", "Eliminar registro");
         deleteButton.title = "Eliminar";
-        deleteButton.textContent = "×";
+        deleteButton.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M5 7h14M9 7V5h6v2m3 0-1 13H7L6 7m4 4v6m4-6v6"></path></svg>';
         actions.append(editButton, deleteButton);
         row.appendChild(actions);
         DOM.consultationTableBody.appendChild(row);
@@ -661,6 +776,20 @@ function renderConsultation(isSingleDate) {
     emptyRow.appendChild(emptyCell);
     DOM.consultationTableBody.appendChild(emptyRow);
   }
+
+  const totalRow = document.createElement("tr");
+  const totalLabel = document.createElement("th");
+  totalLabel.scope = "row";
+  totalLabel.colSpan = headers.length - 1;
+  totalLabel.textContent = "Total";
+  const totalValue = document.createElement("td");
+  totalValue.id = "consultationTotal";
+  totalValue.textContent = String(total);
+  totalRow.append(totalLabel, totalValue);
+  if (isSingleDate) {
+    totalRow.appendChild(document.createElement("td"));
+  }
+  DOM.consultationTableFoot.appendChild(totalRow);
 }
 
 function compareConsultationActivities(a, b) {

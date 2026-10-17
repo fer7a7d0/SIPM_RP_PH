@@ -218,48 +218,57 @@
 
         <section id="consultaScreen" class="screen" role="tabpanel" aria-labelledby="tabConsulta" aria-hidden="true">
           <article class="panel consultation-panel">
-            <div class="dashboard-header">
-              <div>
-                <h2>Consulta de registros</h2>
-                <p class="panel-note">Selecciona Desde para consultar una fecha; Hasta es opcional. Si indicas Hasta, se mostrarán cantidades acumuladas del rango sin acciones de edición.</p>
-              </div>
+            <div class="consultation-header">
+              <h2>Consulta de registros</h2>
+              <p class="panel-note">Registros de producción.</p>
               <div class="consultation-controls">
-                <label for="consultationStartDate">Desde (dd/mm/aaaa)</label>
+                <label for="consultationStartDate">Desde</label>
                 <div class="date-picker-control">
-                  <input id="consultationStartDate" class="month-filter-input" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" />
+                  <input id="consultationStartDate" class="month-filter-input" type="text" inputmode="numeric" maxlength="10" autocomplete="off" />
                   <button id="consultationStartDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha inicial" title="Elegir fecha">
                     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                      <rect x="3.5" y="5" width="17" height="16" rx="2"></rect>
-                      <path d="M7.5 3v4M16.5 3v4M3.5 9h17M8 13h2m4 0h2m-8 4h2"></path>
+                      <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+                      <path d="M8 3v4m8-4v4M4 9h16"></path>
                     </svg>
                   </button>
-                  <input id="consultationStartDatePicker" class="date-picker-native" type="date" tabindex="-1" aria-hidden="true" />
+                  <div id="consultationStartDateCalendar" class="date-picker-calendar" role="dialog" aria-label="Calendario de fecha inicial" hidden>
+                    <div class="calendar-header">
+                      <button id="consultationStartDatePreviousMonth" class="calendar-nav-button" type="button" aria-label="Mes anterior">&lsaquo;</button>
+                      <strong id="consultationStartDateMonthLabel"></strong>
+                      <button id="consultationStartDateNextMonth" class="calendar-nav-button" type="button" aria-label="Mes siguiente">&rsaquo;</button>
+                    </div>
+                    <div class="calendar-grid" id="consultationStartDateCalendarGrid"></div>
+                  </div>
                 </div>
-                <label for="consultationEndDate">Hasta (dd/mm/aaaa, opcional)</label>
+                <label for="consultationEndDate">Hasta (opcional)</label>
                 <div class="date-picker-control">
-                  <input id="consultationEndDate" class="month-filter-input" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" />
+                  <input id="consultationEndDate" class="month-filter-input" type="text" inputmode="numeric" maxlength="10" autocomplete="off" />
                   <button id="consultationEndDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha final" title="Elegir fecha">
                     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                      <rect x="3.5" y="5" width="17" height="16" rx="2"></rect>
-                      <path d="M7.5 3v4M16.5 3v4M3.5 9h17M8 13h2m4 0h2m-8 4h2"></path>
+                      <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+                      <path d="M8 3v4m8-4v4M4 9h16"></path>
                     </svg>
                   </button>
-                  <input id="consultationEndDatePicker" class="date-picker-native" type="date" tabindex="-1" aria-hidden="true" />
+                  <div id="consultationEndDateCalendar" class="date-picker-calendar" role="dialog" aria-label="Calendario de fecha final" hidden>
+                    <div class="calendar-header">
+                      <button id="consultationEndDatePreviousMonth" class="calendar-nav-button" type="button" aria-label="Mes anterior">&lsaquo;</button>
+                      <strong id="consultationEndDateMonthLabel"></strong>
+                      <button id="consultationEndDateNextMonth" class="calendar-nav-button" type="button" aria-label="Mes siguiente">&rsaquo;</button>
+                    </div>
+                    <div class="calendar-grid" id="consultationEndDateCalendarGrid"></div>
+                  </div>
                 </div>
                 <button id="consultationSearchButton" type="button" class="btn-secondary">Consultar</button>
               </div>
             </div>
 
-            <p id="consultationModeMessage" class="panel-note" aria-live="polite"></p>
             <p id="consultationMessage" class="status-message" aria-live="polite"></p>
-            <div class="consultation-summary">
-              Total de cilindros: <strong id="consultationTotal">0</strong>
-            </div>
 
             <div class="table-wrap">
               <table class="consultation-table">
                 <thead id="consultationTableHead"></thead>
                 <tbody id="consultationTableBody"></tbody>
+                <tfoot id="consultationTableFoot"></tfoot>
               </table>
             </div>
           </article>

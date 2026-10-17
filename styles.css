@@ -236,13 +236,42 @@ textarea:focus {
 }
 
 .btn-small {
-  width: 34px;
-  height: 34px;
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
   padding: 0;
-  margin: 2px;
+  margin: 1px;
   border-radius: 50%;
-  font-size: 1.15rem;
-  line-height: 1;
+}
+
+.consultation-table .btn-small {
+  border: 1px solid #bcccdc;
+  background: transparent;
+  color: var(--color-primary-dark);
+}
+
+.consultation-table .btn-danger.btn-small {
+  border-color: #f0aaa5;
+  color: var(--color-danger);
+}
+
+.consultation-table .btn-small:hover {
+  background: rgba(11, 110, 79, 0.1);
+}
+
+.consultation-table .btn-danger.btn-small:hover {
+  background: rgba(180, 35, 24, 0.1);
+}
+
+.consultation-table .btn-small svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .status-message {
@@ -292,6 +321,17 @@ textarea:focus {
   gap: 8px;
 }
 
+.consultation-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.consultation-header > .panel-note {
+  margin: -8px 0 0;
+}
+
 .consultation-controls label {
   color: var(--color-muted);
 }
@@ -327,8 +367,8 @@ textarea:focus {
 }
 
 .date-picker-button svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -336,26 +376,133 @@ textarea:focus {
   stroke-width: 1.8;
 }
 
-.date-picker-native {
+.date-picker-calendar {
   position: absolute;
-  z-index: -1;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 276px;
+  padding: 12px;
+  border: 1px solid #bcccdc;
+  border-radius: var(--radius-md);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-main);
 }
 
-.consultation-summary {
-  margin: 12px 0;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background: #e9f8f2;
-  font-weight: 600;
+.date-picker-calendar[hidden] {
+  display: none;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.calendar-nav-button,
+.calendar-day {
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-text);
+  background: transparent;
+  cursor: pointer;
+}
+
+.calendar-nav-button {
+  height: 32px;
+  font-size: 1.35rem;
+}
+
+.calendar-nav-button:hover,
+.calendar-day:hover {
+  background: rgba(11, 110, 79, 0.12);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.calendar-weekday,
+.calendar-empty,
+.calendar-day {
+  display: grid;
+  min-width: 0;
+  height: 32px;
+  place-items: center;
+}
+
+.calendar-weekday {
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.calendar-day {
+  padding: 0;
+  font-size: 0.88rem;
+}
+
+.calendar-day.today {
+  outline: 1px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.calendar-day.selected {
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.calendar-day.selected:hover {
+  background: var(--color-primary-dark);
 }
 
 .consultation-table {
-  min-width: 760px;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.consultation-table th:first-child {
+  width: 65%;
+}
+
+.consultation-table th:nth-child(2) {
+  width: 20%;
+}
+
+.consultation-table th:last-child:not(:first-child):not(:nth-child(2)) {
+  width: 15%;
+}
+
+.consultation-table td {
+  overflow-wrap: anywhere;
+}
+
+.consultation-table td:nth-child(2),
+.consultation-table tfoot td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.consultation-table tfoot {
+  border-top: 2px solid var(--color-primary);
+  background: #e9f8f2;
+  color: #102a43;
+  font-weight: 700;
+}
+
+.consultation-table tfoot th {
+  text-align: right;
+  background: transparent;
+}
+
+.consultation-table tfoot td {
+  background: transparent;
 }
 
 .empty-state {
@@ -569,12 +716,27 @@ thead th {
     background: #27476e;
   }
 
+  .date-picker-calendar {
+    border-color: #2a3d5f;
+  }
+
+  .calendar-nav-button:hover,
+  .calendar-day:hover {
+    background: rgba(48, 179, 127, 0.18);
+  }
+
+  .calendar-day.selected,
+  .calendar-day.selected:hover {
+    color: #071b14;
+  }
+
   .btn-danger {
     background: #b42318;
   }
 
-  .consultation-summary {
-    background: #10312b;
+  .consultation-table tfoot {
+    background: #132b26;
+    color: #e5edf7;
   }
 
   .kpi-card {
@@ -673,13 +835,14 @@ thead th {
 
   .consultation-controls {
     width: 100%;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 6px 8px;
   }
 
-  .consultation-controls label,
-  .consultation-controls .month-filter-input,
-  .consultation-controls button {
-    width: 100%;
+  .consultation-controls label {
+    font-size: 0.82rem;
   }
 
   .consultation-controls .date-picker-control {
@@ -688,6 +851,48 @@ thead th {
 
   .consultation-controls .date-picker-control .month-filter-input {
     width: 100%;
+    min-width: 0;
+    padding: 8px 34px 8px 9px;
+  }
+
+  .consultation-controls #consultationSearchButton {
+    grid-column: 1 / -1;
+    width: 100%;
+    padding: 9px 12px;
+  }
+
+  .consultation-table th:first-child {
+    width: 60%;
+  }
+
+  .consultation-table th:nth-child(2) {
+    width: 22%;
+  }
+
+  .consultation-table th:last-child:not(:first-child):not(:nth-child(2)) {
+    width: 18%;
+  }
+
+  .consultation-table th,
+  .consultation-table td {
+    padding: 7px 5px;
+    font-size: 0.82rem;
+  }
+
+  .consultation-table .btn-small {
+    width: 24px;
+    height: 24px;
+    margin: 1px;
+  }
+
+  .consultation-table .btn-small svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  #consultationMessage {
+    font-size: 0.85rem;
+    margin-top: 8px;
   }
 
   .month-filter-input {
