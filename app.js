@@ -8,7 +8,7 @@
 */
 
 // Reemplazar con la URL del despliegue de Apps Script (Web App).
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbzZrMvY7WTpdzLM-jw1toZn772H5ckJgVuZbtxfbEq-T-tk3DfewM-QUqlZwekPvSyA/exec";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbyMHu48u79rxwmLWBg6cHdAU7zlVeb7XnLOs3I2IhzW6gsnadLb8AR9L5LpB7yqA-OI/exec";
 const APP_TIME_ZONE = "America/Monterrey";
 const NUMBER_FORMATTER = new Intl.NumberFormat("es-MX");
 
@@ -42,6 +42,7 @@ const APP_STATE = {
     endCalendarMonth: ""
   },
   productionCalendarMonth: "",
+  recordEditorCalendarMonth: "",
   duplicateCache: new Set()
 };
 
@@ -56,6 +57,13 @@ const DOM = {
   productionDatePreviousMonth: document.getElementById("productionDatePreviousMonth"),
   productionDateNextMonth: document.getElementById("productionDateNextMonth"),
   productionDateTodayButton: document.getElementById("productionDateTodayButton"),
+  recordEditorDatePickerButton: document.getElementById("recordEditorDatePickerButton"),
+  recordEditorDateCalendar: document.getElementById("recordEditorDateCalendar"),
+  recordEditorDateMonthLabel: document.getElementById("recordEditorDateMonthLabel"),
+  recordEditorDateCalendarGrid: document.getElementById("recordEditorDateCalendarGrid"),
+  recordEditorDatePreviousMonth: document.getElementById("recordEditorDatePreviousMonth"),
+  recordEditorDateNextMonth: document.getElementById("recordEditorDateNextMonth"),
+  recordEditorDateTodayButton: document.getElementById("recordEditorDateTodayButton"),
   operatorSelect: document.getElementById("operator"),
   shiftSelect: document.getElementById("shift"),
   activitySelect: document.getElementById("activity"),
@@ -93,6 +101,7 @@ const DOM = {
   recordEditor: document.getElementById("recordEditor"),
   recordEditorForm: document.getElementById("recordEditorForm"),
   recordEditorDate: document.getElementById("recordEditorDate"),
+  recordEditorTime: document.getElementById("recordEditorTime"),
   recordEditorOperator: document.getElementById("recordEditorOperator"),
   recordEditorShift: document.getElementById("recordEditorShift"),
   recordEditorActivity: document.getElementById("recordEditorActivity"),
@@ -168,6 +177,11 @@ function bindEvents() {
   DOM.productionDatePreviousMonth.addEventListener("click", () => shiftConsultationCalendarMonth("production", -1));
   DOM.productionDateNextMonth.addEventListener("click", () => shiftConsultationCalendarMonth("production", 1));
   DOM.productionDateTodayButton.addEventListener("click", selectProductionToday);
+  DOM.recordEditorDatePickerButton.addEventListener("click", () => openConsultationDateCalendar("editor"));
+  DOM.recordEditorDateCalendarGrid.addEventListener("click", (event) => onConsultationCalendarClick(event, "editor"));
+  DOM.recordEditorDatePreviousMonth.addEventListener("click", () => shiftConsultationCalendarMonth("editor", -1));
+  DOM.recordEditorDateNextMonth.addEventListener("click", () => shiftConsultationCalendarMonth("editor", 1));
+  DOM.recordEditorDateTodayButton.addEventListener("click", selectRecordEditorToday);
   window.addEventListener("resize", positionOpenConsultationDateCalendars);
   document.addEventListener("click", onConsultationCalendarOutsideClick);
   document.addEventListener("keydown", (event) => {
@@ -203,15 +217,18 @@ function formatDateForMexico(dateKey) {
 }
 
 function openConsultationDateCalendar(which) {
-  const textInput = which === "production"
-    ? DOM.productionDate
-    : which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
-  const calendar = which === "production"
-    ? DOM.productionDateCalendar
-    : which === "start" ? DOM.consultationStartDateCalendar : DOM.consultationEndDateCalendar;
-  const button = which === "production"
-    ? DOM.productionDatePickerButton
-    : which === "start" ? DOM.consultationStartDatePickerButton : DOM.consultationEndDatePickerButton;
+  const textInput = which === "editor"
+    ? DOM.recordEditorDate
+    : which === "production" ? DOM.productionDate
+      : which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
+  const calendar = which === "editor"
+    ? DOM.recordEditorDateCalendar
+    : which === "production" ? DOM.productionDateCalendar
+      : which === "start" ? DOM.consultationStartDateCalendar : DOM.consultationEndDateCalendar;
+  const button = which === "editor"
+    ? DOM.recordEditorDatePickerButton
+    : which === "production" ? DOM.productionDatePickerButton
+      : which === "start" ? DOM.consultationStartDatePickerButton : DOM.consultationEndDatePickerButton;
   const selectedDate = parseMexicoDate(textInput.value);
   const month = selectedDate ? selectedDate.slice(0, 7) : formatDateKey(new Date()).slice(0, 7);
 
@@ -224,7 +241,7 @@ function openConsultationDateCalendar(which) {
 }
 
 function positionOpenConsultationDateCalendars() {
-  [DOM.consultationStartDateCalendar, DOM.consultationEndDateCalendar, DOM.productionDateCalendar]
+  [DOM.consultationStartDateCalendar, DOM.consultationEndDateCalendar, DOM.productionDateCalendar, DOM.recordEditorDateCalendar]
     .filter((calendar) => !calendar.hidden)
     .forEach(positionConsultationDateCalendar);
 }
@@ -245,9 +262,11 @@ function closeConsultationDateCalendars() {
   DOM.consultationStartDateCalendar.hidden = true;
   DOM.consultationEndDateCalendar.hidden = true;
   DOM.productionDateCalendar.hidden = true;
+  DOM.recordEditorDateCalendar.hidden = true;
   DOM.consultationStartDatePickerButton.setAttribute("aria-expanded", "false");
   DOM.consultationEndDatePickerButton.setAttribute("aria-expanded", "false");
   DOM.productionDatePickerButton.setAttribute("aria-expanded", "false");
+  DOM.recordEditorDatePickerButton.setAttribute("aria-expanded", "false");
 }
 
 function onConsultationCalendarOutsideClick(event) {
@@ -257,7 +276,9 @@ function onConsultationCalendarOutsideClick(event) {
 }
 
 function setConsultationCalendarMonth(which, monthKey) {
-  if (which === "production") {
+  if (which === "editor") {
+    APP_STATE.recordEditorCalendarMonth = monthKey;
+  } else if (which === "production") {
     APP_STATE.productionCalendarMonth = monthKey;
   } else if (which === "start") {
     APP_STATE.consultation.startCalendarMonth = monthKey;
@@ -267,6 +288,9 @@ function setConsultationCalendarMonth(which, monthKey) {
 }
 
 function getConsultationCalendarMonth(which) {
+  if (which === "editor") {
+    return APP_STATE.recordEditorCalendarMonth;
+  }
   if (which === "production") {
     return APP_STATE.productionCalendarMonth;
   }
@@ -286,19 +310,23 @@ function shiftConsultationCalendarMonth(which, delta) {
 function renderConsultationDateCalendar(which) {
   const monthKey = getConsultationCalendarMonth(which);
   const [year, month] = monthKey.split("-").map(Number);
-  const textInput = which === "production"
-    ? DOM.productionDate
-    : which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
+  const textInput = which === "editor"
+    ? DOM.recordEditorDate
+    : which === "production" ? DOM.productionDate
+      : which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
   const selectedDate = parseMexicoDate(textInput.value);
-  const calendar = which === "production"
-    ? DOM.productionDateCalendar
-    : which === "start" ? DOM.consultationStartDateCalendar : DOM.consultationEndDateCalendar;
-  const monthLabel = which === "production"
-    ? DOM.productionDateMonthLabel
-    : which === "start" ? DOM.consultationStartDateMonthLabel : DOM.consultationEndDateMonthLabel;
-  const grid = which === "production"
-    ? DOM.productionDateCalendarGrid
-    : which === "start" ? DOM.consultationStartDateCalendarGrid : DOM.consultationEndDateCalendarGrid;
+  const calendar = which === "editor"
+    ? DOM.recordEditorDateCalendar
+    : which === "production" ? DOM.productionDateCalendar
+      : which === "start" ? DOM.consultationStartDateCalendar : DOM.consultationEndDateCalendar;
+  const monthLabel = which === "editor"
+    ? DOM.recordEditorDateMonthLabel
+    : which === "production" ? DOM.productionDateMonthLabel
+      : which === "start" ? DOM.consultationStartDateMonthLabel : DOM.consultationEndDateMonthLabel;
+  const grid = which === "editor"
+    ? DOM.recordEditorDateCalendarGrid
+    : which === "production" ? DOM.productionDateCalendarGrid
+      : which === "start" ? DOM.consultationStartDateCalendarGrid : DOM.consultationEndDateCalendarGrid;
   const monthDate = new Date(Date.UTC(year, month - 1, 1));
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const mondayOffset = (monthDate.getUTCDay() + 6) % 7;
@@ -356,7 +384,8 @@ function renderConsultationDateCalendar(which) {
     emptyCell.setAttribute("aria-hidden", "true");
     grid.appendChild(emptyCell);
   }
-  const dateType = which === "production" ? "de producción" : which === "start" ? "inicial" : "final";
+  const dateType = which === "editor" ? "del registro"
+    : which === "production" ? "de producción" : which === "start" ? "inicial" : "final";
   calendar.setAttribute("aria-label", `Calendario de fecha ${dateType}, ${monthLabel.textContent}`);
 }
 
@@ -365,12 +394,13 @@ function onConsultationCalendarClick(event, which) {
   if (!dayButton) {
     return;
   }
-  const input = which === "production"
-    ? DOM.productionDate
-    : which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
+  const input = which === "editor"
+    ? DOM.recordEditorDate
+    : which === "production" ? DOM.productionDate
+      : which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
   input.value = formatDateForMexico(dayButton.dataset.date);
   closeConsultationDateCalendars();
-  if (which === "production") {
+  if (which === "production" || which === "editor") {
     return;
   }
   if (which === "start") {
@@ -382,6 +412,11 @@ function onConsultationCalendarClick(event, which) {
 
 function selectProductionToday() {
   DOM.productionDate.value = formatDateForMexico(formatDateKey(new Date()));
+  closeConsultationDateCalendars();
+}
+
+function selectRecordEditorToday() {
+  DOM.recordEditorDate.value = formatDateForMexico(formatDateKey(new Date()));
   closeConsultationDateCalendars();
 }
 
@@ -967,7 +1002,8 @@ function onConsultationAction(event) {
 
 function openRecordEditor(record) {
   APP_STATE.consultation.editingRecordId = record.id;
-  DOM.recordEditorDate.textContent = `Fecha: ${record.date} | Hora: ${record.time}`;
+  DOM.recordEditorDate.value = formatDateForMexico(record.date);
+  DOM.recordEditorTime.textContent = `Hora: ${record.time}`;
   setSelectOptions(DOM.recordEditorOperator, [...APP_STATE.operators, record.operator], record.operator);
   setSelectOptions(DOM.recordEditorShift, APP_STATE.shiftOptions, record.shift);
   setSelectOptions(DOM.recordEditorActivity, [...APP_STATE.activities, record.activity], record.activity);
@@ -995,6 +1031,11 @@ function setSelectOptions(select, values, selectedValue) {
 
 async function onSaveRecordChanges(event) {
   event.preventDefault();
+  const date = parseMexicoDate(DOM.recordEditorDate.value);
+  if (!date) {
+    setRecordEditorMessage("Debe ingresar una fecha valida en formato dd/mm/aaaa.", "error");
+    return;
+  }
   const quantity = Number(DOM.recordEditorQuantity.value);
   if (!Number.isInteger(quantity) || quantity <= 0) {
     setRecordEditorMessage("La cantidad debe ser un numero entero positivo.", "error");
@@ -1016,7 +1057,8 @@ async function onSaveRecordChanges(event) {
   try {
     await callApi("updateProductionRecord", {
       id: recordId,
-      date: parseMexicoDate(DOM.consultationStartDate.value),
+      date,
+      originalDate: record.date,
       operator: DOM.recordEditorOperator.value,
       shift: DOM.recordEditorShift.value,
       activity: DOM.recordEditorActivity.value,
@@ -1025,6 +1067,7 @@ async function onSaveRecordChanges(event) {
       captureUser: DOM.recordEditorCaptureUser.value
     });
     Object.assign(record, {
+      date,
       operator: DOM.recordEditorOperator.value,
       shift: DOM.recordEditorShift.value,
       activity: DOM.recordEditorActivity.value,
@@ -1032,7 +1075,11 @@ async function onSaveRecordChanges(event) {
       observations: DOM.recordEditorObservations.value.trim(),
       captureUser: DOM.recordEditorCaptureUser.value
     });
-    updateConsultationRecordRow(record);
+    if (isRecordDateInConsultationRange(record.date)) {
+      updateConsultationRecordRow(record);
+    } else {
+      removeConsultationRecordFromResults(record.id);
+    }
     DOM.recordEditor.close();
     setConsultationMessage("Registro actualizado correctamente.", "success");
   } catch (error) {
@@ -1041,6 +1088,34 @@ async function onSaveRecordChanges(event) {
   } finally {
     DOM.saveRecordChangesButton.disabled = false;
   }
+}
+
+function isRecordDateInConsultationRange(date) {
+  const startDate = parseMexicoDate(DOM.consultationStartDate.value);
+  const endDate = parseMexicoDate(DOM.consultationEndDate.value);
+  if (!startDate) {
+    return true;
+  }
+  return endDate ? date >= startDate && date <= endDate : date === startDate;
+}
+
+function removeConsultationRecordFromResults(recordId) {
+  const row = findConsultationRecordRow(recordId);
+  if (row) {
+    row.remove();
+  }
+  APP_STATE.consultation.records = APP_STATE.consultation.records
+    .filter((item) => String(item.id) !== String(recordId));
+  if (APP_STATE.consultation.records.length === 0) {
+    const emptyRow = document.createElement("tr");
+    const emptyCell = document.createElement("td");
+    emptyCell.colSpan = DOM.consultationTableHead.querySelectorAll("th").length || 3;
+    emptyCell.className = "empty-state";
+    emptyCell.textContent = "Sin registros para mostrar.";
+    emptyRow.appendChild(emptyCell);
+    DOM.consultationTableBody.appendChild(emptyRow);
+  }
+  updateConsultationTotal();
 }
 
 async function deleteConsultationRecord(record) {

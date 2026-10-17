@@ -274,8 +274,29 @@
           <dialog id="recordEditor" class="record-editor">
             <form id="recordEditorForm" novalidate>
               <h2>Editar registro</h2>
-              <p id="recordEditorDate" class="panel-note"></p>
+              <p id="recordEditorTime" class="panel-note"></p>
               <div class="form-grid">
+                <label class="full-width">
+                  Fecha
+                  <div class="date-picker-control record-editor-date-picker">
+                    <input id="recordEditorDate" class="month-filter-input" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="dd/mm/aaaa" required />
+                    <button id="recordEditorDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha del registro" title="Elegir fecha" aria-expanded="false">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                        <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+                        <path d="M8 3v4m8-4v4M4 9h16"></path>
+                      </svg>
+                    </button>
+                    <div id="recordEditorDateCalendar" class="date-picker-calendar" role="dialog" aria-label="Calendario de fecha del registro" hidden>
+                      <div class="calendar-header">
+                        <button id="recordEditorDatePreviousMonth" class="calendar-nav-button" type="button" aria-label="Mes anterior">&lsaquo;</button>
+                        <strong id="recordEditorDateMonthLabel"></strong>
+                        <button id="recordEditorDateNextMonth" class="calendar-nav-button" type="button" aria-label="Mes siguiente">&rsaquo;</button>
+                      </div>
+                      <div class="calendar-grid" id="recordEditorDateCalendarGrid"></div>
+                      <button id="recordEditorDateTodayButton" class="calendar-today-button" type="button">Hoy</button>
+                    </div>
+                  </div>
+                </label>
                 <label>
                   Operador
                   <select id="recordEditorOperator" required></select>

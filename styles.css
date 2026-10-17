@@ -353,6 +353,11 @@ textarea:focus {
   padding-right: 40px;
 }
 
+.record-editor-date-picker .month-filter-input {
+  width: 100%;
+  padding-right: 40px;
+}
+
 .date-picker-button {
   position: absolute;
   right: 4px;

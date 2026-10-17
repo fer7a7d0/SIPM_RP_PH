@@ -943,7 +943,9 @@ function updateProductionRecord(payload) {
   try {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.production);
     const rowNumber = findActiveProductionRow(sheet, payload.id);
-    assertProductionRecordDate(sheet, rowNumber, payload.date);
+    const originalDate = validateDateKey(payload.originalDate);
+    const productionDate = validateDateKey(payload.date);
+    assertProductionRecordDate(sheet, rowNumber, originalDate);
     const existingActivity = String(sheet.getRange(rowNumber, 6).getValue() || '').trim();
     const operator = String(payload.operator || '').trim();
     const shift = String(payload.shift || '').trim();
@@ -973,6 +975,7 @@ function updateProductionRecord(payload) {
 
     const minuteBucket = Utilities.formatDate(new Date(), APP_TIME_ZONE, 'yyyy-MM-dd HH:mm');
     const duplicateKey = [operator, shift, activity, quantity, minuteBucket].join('|').toLowerCase();
+    sheet.getRange(rowNumber, 2).setValue(productionDate);
     sheet.getRange(rowNumber, 4, 1, 6).setValues([[
       operator,
       shift,
