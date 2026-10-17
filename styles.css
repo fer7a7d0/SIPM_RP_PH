@@ -533,18 +533,6 @@ textarea:focus {
   background: rgba(16, 42, 67, 0.58);
 }
 
-.record-editor .form-grid {
-  margin-top: 14px;
-}
-
-@media (max-width: 600px) {
-  .record-editor {
-    width: 90vw;
-    max-height: 85vh;
-    padding: 16px;
-  }
-}
-
 .kpi-grid {
   margin-top: 14px;
   display: grid;
@@ -932,5 +920,47 @@ thead th {
 
   .tab-nav {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .record-editor .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .record-editor label {
+    min-width: 0;
+    gap: 3px;
+    font-size: 0.82rem;
+  }
+
+  .record-editor input,
+  .record-editor select,
+  .record-editor textarea {
+    min-width: 0;
+    padding: 7px 8px;
+    font-size: 0.88rem;
+  }
+
+  .record-editor textarea {
+    height: 52px;
+  }
+
+  .record-editor .status-message {
+    margin-top: 8px;
+    min-height: 18px;
+    font-size: 0.82rem;
+  }
+
+  .record-editor .action-row {
+    margin-top: 8px;
+    gap: 8px;
+  }
+
+  .record-editor .action-row button {
+    padding: 9px 12px;
+    font-size: 0.88rem;
   }
 }
