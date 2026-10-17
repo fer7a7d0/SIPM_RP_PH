@@ -715,6 +715,7 @@ function invalidateConsultationResults() {
 }
 
 function renderConsultation(isSingleDate) {
+  const formatQuantity = new Intl.NumberFormat("es-MX").format;
   const headers = isSingleDate
     ? ["Actividad", "Cantidad", ""]
     : ["Actividad", "Cantidad acumulada"];
@@ -750,7 +751,7 @@ function renderConsultation(isSingleDate) {
       .sort(compareConsultationActivities)
       .forEach((record) => {
         const row = document.createElement("tr");
-        [record.activity, String(record.quantity)].forEach((value) => {
+        [record.activity, formatQuantity(Number(record.quantity || 0))].forEach((value) => {
           const cell = document.createElement("td");
           cell.textContent = value || "";
           row.appendChild(cell);
@@ -764,7 +765,7 @@ function renderConsultation(isSingleDate) {
         || String(a.operator || "").localeCompare(String(b.operator || ""), "es"))
       .forEach((record) => {
         const row = document.createElement("tr");
-        [record.activity, String(record.quantity)].forEach((value) => {
+        [record.activity, formatQuantity(Number(record.quantity || 0))].forEach((value) => {
           const cell = document.createElement("td");
           cell.textContent = value || "";
           row.appendChild(cell);
@@ -812,7 +813,7 @@ function renderConsultation(isSingleDate) {
   totalLabel.textContent = "Total";
   const totalValue = document.createElement("td");
   totalValue.id = "consultationTotal";
-  totalValue.textContent = String(total);
+  totalValue.textContent = formatQuantity(total);
   totalRow.append(totalLabel, totalValue);
   if (isSingleDate) {
     totalRow.appendChild(document.createElement("td"));

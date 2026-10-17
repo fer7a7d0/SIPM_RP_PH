@@ -466,6 +466,7 @@ textarea:focus {
 .consultation-table {
   min-width: 0;
   table-layout: fixed;
+  font-size: 1rem;
 }
 
 .consultation-table th:first-child {
@@ -481,7 +482,12 @@ textarea:focus {
 }
 
 .consultation-table td {
+  padding: 10px 9px;
   overflow-wrap: anywhere;
+}
+
+.consultation-table th {
+  padding: 10px 9px;
 }
 
 .consultation-table .consultation-actions {
@@ -881,8 +887,8 @@ thead th {
 
   .consultation-table th,
   .consultation-table td {
-    padding: 7px 5px;
-    font-size: 0.82rem;
+    padding: 8px 6px;
+    font-size: 0.9rem;
   }
 
   .consultation-table .btn-small {
