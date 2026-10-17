@@ -738,20 +738,16 @@ function renderConsultation(isSingleDate) {
   if (!isSingleDate) {
     const groups = new Map();
     APP_STATE.consultation.records.forEach((record) => {
-      const key = JSON.stringify([record.operator, record.shift, record.activity]);
+      const key = String(record.activity || "");
       const group = groups.get(key) || {
-        operator: record.operator,
-        shift: record.shift,
         activity: record.activity,
         quantity: 0
       };
       group.quantity += Number(record.quantity || 0);
       groups.set(key, group);
     });
-
     [...groups.values()]
-      .sort((a, b) => compareConsultationActivities(a, b)
-        || String(a.operator || "").localeCompare(String(b.operator || ""), "es"))
+      .sort(compareConsultationActivities)
       .forEach((record) => {
         const row = document.createElement("tr");
         [record.activity, String(record.quantity)].forEach((value) => {
