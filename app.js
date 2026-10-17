@@ -771,6 +771,7 @@ function renderConsultation(isSingleDate) {
         || String(a.operator || "").localeCompare(String(b.operator || ""), "es"))
       .forEach((record) => {
         const row = document.createElement("tr");
+        row.dataset.recordId = record.id;
         [record.activity, formatQuantity(Number(record.quantity || 0))].forEach((value) => {
           const cell = document.createElement("td");
           cell.textContent = value || "";
@@ -825,6 +826,41 @@ function renderConsultation(isSingleDate) {
     totalRow.appendChild(document.createElement("td"));
   }
   DOM.consultationTableFoot.appendChild(totalRow);
+}
+
+function updateConsultationRecordRow(record) {
+  const row = findConsultationRecordRow(record.id);
+  if (!row) {
+    throw new Error("No se encontro la fila del registro actualizado en la consulta.");
+  }
+
+  row.children[0].textContent = record.activity || "";
+  row.children[1].textContent = formatQuantity(Number(record.quantity || 0));
+
+  const sortedRecords = [...APP_STATE.consultation.records].sort((a, b) => compareConsultationActivities(a, b)
+    || String(a.time || "").localeCompare(String(b.time || ""))
+    || String(a.operator || "").localeCompare(String(b.operator || ""), "es"));
+  const recordIndex = sortedRecords.findIndex((item) => String(item.id) === String(record.id));
+  const nextRecord = sortedRecords[recordIndex + 1];
+  const nextRow = nextRecord
+    ? findConsultationRecordRow(nextRecord.id)
+    : null;
+  DOM.consultationTableBody.insertBefore(row, nextRow);
+  updateConsultationTotal();
+}
+
+function findConsultationRecordRow(recordId) {
+  return [...DOM.consultationTableBody.querySelectorAll("tr[data-record-id]")]
+    .find((row) => row.dataset.recordId === String(recordId));
+}
+
+function updateConsultationTotal() {
+  const total = APP_STATE.consultation.records.reduce((sum, record) => sum + Number(record.quantity || 0), 0);
+  const totalValue = DOM.consultationTableFoot.querySelector("#consultationTotal");
+  if (!totalValue) {
+    throw new Error("No se encontro el total de la consulta actual.");
+  }
+  totalValue.textContent = formatQuantity(total);
 }
 
 function compareConsultationActivities(a, b) {
@@ -898,6 +934,10 @@ async function onSaveRecordChanges(event) {
     setRecordEditorMessage("El registro ya no esta en la consulta actual. Cierra y vuelve a buscar.", "error");
     return;
   }
+  if (!findConsultationRecordRow(recordId)) {
+    setRecordEditorMessage("No se encontro la fila del registro en la consulta actual.", "error");
+    return;
+  }
 
   DOM.saveRecordChangesButton.disabled = true;
   setRecordEditorMessage("Guardando cambios...", "");
@@ -920,7 +960,7 @@ async function onSaveRecordChanges(event) {
       observations: DOM.recordEditorObservations.value.trim(),
       captureUser: DOM.recordEditorCaptureUser.value
     });
-    renderConsultation(true);
+    updateConsultationRecordRow(record);
     DOM.recordEditor.close();
     setConsultationMessage("Registro actualizado correctamente.", "success");
   } catch (error) {
@@ -935,6 +975,11 @@ async function deleteConsultationRecord(record) {
   if (!window.confirm(`¿Eliminar el registro de ${record.activity} (${record.quantity} cilindros)?`)) {
     return;
   }
+  const row = findConsultationRecordRow(record.id);
+  if (!row) {
+    setConsultationMessage("No se encontro la fila del registro en la consulta actual.", "error");
+    return;
+  }
   DOM.consultationTableBody.querySelectorAll("button[data-action]").forEach((button) => {
     button.disabled = true;
   });
@@ -945,7 +990,20 @@ async function deleteConsultationRecord(record) {
     });
     APP_STATE.consultation.records = APP_STATE.consultation.records
       .filter((item) => String(item.id) !== String(record.id));
-    renderConsultation(true);
+    row.remove();
+    if (APP_STATE.consultation.records.length === 0) {
+      const emptyRow = document.createElement("tr");
+      const emptyCell = document.createElement("td");
+      emptyCell.colSpan = 3;
+      emptyCell.className = "empty-state";
+      emptyCell.textContent = "Sin registros para mostrar.";
+      emptyRow.appendChild(emptyCell);
+      DOM.consultationTableBody.appendChild(emptyRow);
+    }
+    updateConsultationTotal();
+    DOM.consultationTableBody.querySelectorAll("button[data-action]").forEach((button) => {
+      button.disabled = false;
+    });
     setConsultationMessage("Registro eliminado correctamente.", "success");
   } catch (error) {
     console.error(error);
