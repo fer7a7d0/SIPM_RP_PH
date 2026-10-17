@@ -216,7 +216,92 @@
           </article>
         </section>
 
-        <section id="consultaScreen" class="screen" role="tabpanel" aria-labelledby="tabConsulta" aria-hidden="true"></section>
+        <section id="consultaScreen" class="screen" role="tabpanel" aria-labelledby="tabConsulta" aria-hidden="true">
+          <article class="panel consultation-panel">
+            <div class="dashboard-header">
+              <div>
+                <h2>Consulta de registros</h2>
+                <p class="panel-note">Selecciona Desde para consultar una fecha; Hasta es opcional. Si indicas Hasta, se mostrarán cantidades acumuladas del rango sin acciones de edición.</p>
+              </div>
+              <div class="consultation-controls">
+                <label for="consultationStartDate">Desde (dd/mm/aaaa)</label>
+                <div class="date-picker-control">
+                  <input id="consultationStartDate" class="month-filter-input" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" />
+                  <button id="consultationStartDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha inicial" title="Elegir fecha">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                      <rect x="3.5" y="5" width="17" height="16" rx="2"></rect>
+                      <path d="M7.5 3v4M16.5 3v4M3.5 9h17M8 13h2m4 0h2m-8 4h2"></path>
+                    </svg>
+                  </button>
+                  <input id="consultationStartDatePicker" class="date-picker-native" type="date" tabindex="-1" aria-hidden="true" />
+                </div>
+                <label for="consultationEndDate">Hasta (dd/mm/aaaa, opcional)</label>
+                <div class="date-picker-control">
+                  <input id="consultationEndDate" class="month-filter-input" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" />
+                  <button id="consultationEndDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha final" title="Elegir fecha">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                      <rect x="3.5" y="5" width="17" height="16" rx="2"></rect>
+                      <path d="M7.5 3v4M16.5 3v4M3.5 9h17M8 13h2m4 0h2m-8 4h2"></path>
+                    </svg>
+                  </button>
+                  <input id="consultationEndDatePicker" class="date-picker-native" type="date" tabindex="-1" aria-hidden="true" />
+                </div>
+                <button id="consultationSearchButton" type="button" class="btn-secondary">Consultar</button>
+              </div>
+            </div>
+
+            <p id="consultationModeMessage" class="panel-note" aria-live="polite"></p>
+            <p id="consultationMessage" class="status-message" aria-live="polite"></p>
+            <div class="consultation-summary">
+              Total de cilindros: <strong id="consultationTotal">0</strong>
+            </div>
+
+            <div class="table-wrap">
+              <table class="consultation-table">
+                <thead id="consultationTableHead"></thead>
+                <tbody id="consultationTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <dialog id="recordEditor" class="record-editor">
+            <form id="recordEditorForm" novalidate>
+              <h2>Editar registro</h2>
+              <p id="recordEditorDate" class="panel-note"></p>
+              <div class="form-grid">
+                <label>
+                  Operador
+                  <select id="recordEditorOperator" required></select>
+                </label>
+                <label>
+                  Turno
+                  <select id="recordEditorShift" required></select>
+                </label>
+                <label class="full-width">
+                  Actividad
+                  <select id="recordEditorActivity" required></select>
+                </label>
+                <label>
+                  Cantidad de cilindros
+                  <input id="recordEditorQuantity" type="number" min="1" step="1" required />
+                </label>
+                <label>
+                  Usuario que captura
+                  <select id="recordEditorCaptureUser" required></select>
+                </label>
+                <label class="full-width">
+                  Observaciones
+                  <textarea id="recordEditorObservations" rows="3" maxlength="200"></textarea>
+                </label>
+              </div>
+              <p id="recordEditorMessage" class="status-message" aria-live="polite"></p>
+              <div class="action-row">
+                <button id="saveRecordChangesButton" type="submit" class="btn-primary">Guardar cambios</button>
+                <button id="cancelRecordEditButton" type="button" class="btn-secondary">Cancelar</button>
+              </div>
+            </form>
+          </dialog>
+        </section>
       </main>
     </div>
 

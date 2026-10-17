@@ -8,7 +8,7 @@
 */
 
 // Reemplazar con la URL del despliegue de Apps Script (Web App).
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbw4y6KZiSzQubPmZYo55wXTdti2WpeOnWch5FDoTxC_W1Aqb1rk5xpiqrrllHQDUNk5/exec";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbzH47tQDA6yodj1_Fu6lZAiy9HnUnL89RCAozgNOp2ZUtdO2DpKLY8MJPlsL8bSHvB6/exec";
 
 const APP_STATE = {
   operators: [],
@@ -36,6 +36,10 @@ const APP_STATE = {
     byShift: {},
     byOperator: []
   },
+  consultation: {
+    records: [],
+    editingRecordId: ""
+  },
   duplicateCache: new Set()
 };
 
@@ -55,6 +59,30 @@ const DOM = {
   tabCapture: document.getElementById("tabCapture"),
   tabDashboard: document.getElementById("tabDashboard"),
   tabConsulta: document.getElementById("tabConsulta"),
+  consultationStartDate: document.getElementById("consultationStartDate"),
+  consultationStartDatePicker: document.getElementById("consultationStartDatePicker"),
+  consultationStartDatePickerButton: document.getElementById("consultationStartDatePickerButton"),
+  consultationEndDate: document.getElementById("consultationEndDate"),
+  consultationEndDatePicker: document.getElementById("consultationEndDatePicker"),
+  consultationEndDatePickerButton: document.getElementById("consultationEndDatePickerButton"),
+  consultationSearchButton: document.getElementById("consultationSearchButton"),
+  consultationModeMessage: document.getElementById("consultationModeMessage"),
+  consultationMessage: document.getElementById("consultationMessage"),
+  consultationTotal: document.getElementById("consultationTotal"),
+  consultationTableHead: document.getElementById("consultationTableHead"),
+  consultationTableBody: document.getElementById("consultationTableBody"),
+  recordEditor: document.getElementById("recordEditor"),
+  recordEditorForm: document.getElementById("recordEditorForm"),
+  recordEditorDate: document.getElementById("recordEditorDate"),
+  recordEditorOperator: document.getElementById("recordEditorOperator"),
+  recordEditorShift: document.getElementById("recordEditorShift"),
+  recordEditorActivity: document.getElementById("recordEditorActivity"),
+  recordEditorQuantity: document.getElementById("recordEditorQuantity"),
+  recordEditorCaptureUser: document.getElementById("recordEditorCaptureUser"),
+  recordEditorObservations: document.getElementById("recordEditorObservations"),
+  recordEditorMessage: document.getElementById("recordEditorMessage"),
+  saveRecordChangesButton: document.getElementById("saveRecordChangesButton"),
+  cancelRecordEditButton: document.getElementById("cancelRecordEditButton"),
   captureScreen: document.getElementById("captureScreen"),
   dashboardScreen: document.getElementById("dashboardScreen"),
   consultaScreen: document.getElementById("consultaScreen"),
@@ -97,7 +125,24 @@ function bindEvents() {
     activateScreen("dashboard");
     loadDashboard();
   });
-  DOM.tabConsulta.addEventListener("click", () => activateScreen("consulta"));
+  DOM.tabConsulta.addEventListener("click", () => {
+    activateScreen("consulta");
+    const today = formatDateForMexico(formatDateKey(new Date()));
+    DOM.consultationStartDate.value = today;
+    DOM.consultationEndDate.value = "";
+    DOM.consultationEndDatePicker.value = "";
+    loadConsultation();
+  });
+  DOM.consultationSearchButton.addEventListener("click", () => loadConsultation());
+  DOM.consultationStartDate.addEventListener("change", invalidateConsultationResults);
+  DOM.consultationEndDate.addEventListener("change", invalidateConsultationResults);
+  DOM.consultationStartDatePickerButton.addEventListener("click", () => openConsultationDatePicker("start"));
+  DOM.consultationEndDatePickerButton.addEventListener("click", () => openConsultationDatePicker("end"));
+  DOM.consultationStartDatePicker.addEventListener("change", () => syncConsultationDatePicker("start"));
+  DOM.consultationEndDatePicker.addEventListener("change", () => syncConsultationDatePicker("end"));
+  DOM.consultationTableBody.addEventListener("click", onConsultationAction);
+  DOM.recordEditorForm.addEventListener("submit", onSaveRecordChanges);
+  DOM.cancelRecordEditButton.addEventListener("click", () => DOM.recordEditor.close());
   DOM.refreshDashboardButton.addEventListener("click", loadDashboard);
   DOM.monthSelector.addEventListener("change", loadDashboard);
 }
@@ -109,6 +154,48 @@ function getCurrentMonthKey() {
 
 function formatDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function formatDateForMexico(dateKey) {
+  const match = String(dateKey || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : "";
+}
+
+function openConsultationDatePicker(which) {
+  const textInput = which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
+  const datePicker = which === "start" ? DOM.consultationStartDatePicker : DOM.consultationEndDatePicker;
+  datePicker.value = parseMexicoDate(textInput.value);
+
+  if (typeof datePicker.showPicker === "function") {
+    datePicker.showPicker();
+  } else {
+    datePicker.focus();
+    datePicker.click();
+  }
+}
+
+function syncConsultationDatePicker(which) {
+  const textInput = which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
+  const datePicker = which === "start" ? DOM.consultationStartDatePicker : DOM.consultationEndDatePicker;
+  textInput.value = formatDateForMexico(datePicker.value);
+  invalidateConsultationResults();
+}
+
+function parseMexicoDate(value) {
+  const match = String(value || "").trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) {
+    return "";
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+    return "";
+  }
+
+  return `${match[3]}-${match[2]}-${match[1]}`;
 }
 
 function shiftDateKey(dateKey, deltaDays) {
@@ -423,6 +510,280 @@ function renderOperatorTable(targetElement, rows) {
     `;
     targetElement.appendChild(tr);
   });
+}
+
+async function loadConsultation(successMessage) {
+  const startDate = parseMexicoDate(DOM.consultationStartDate.value);
+  const endDateValue = DOM.consultationEndDate.value.trim();
+  const endDate = endDateValue ? parseMexicoDate(endDateValue) : "";
+  if (!startDate || (endDateValue && !endDate)) {
+    setConsultationMessage("Ingresa las fechas en formato dd/mm/aaaa.", "error");
+    return;
+  }
+  if (endDate && startDate > endDate) {
+    setConsultationMessage("La fecha inicial no puede ser posterior a la fecha final.", "error");
+    return;
+  }
+
+  const isSingleDate = !endDate;
+  DOM.consultationSearchButton.disabled = true;
+  DOM.consultationTableBody.replaceChildren();
+  setConsultationMessage("Cargando registros...", "");
+  DOM.consultationModeMessage.textContent = isSingleDate
+    ? `Registros individuales del ${formatDateForMexico(startDate)}. Puedes editarlos o eliminarlos.`
+    : `Cantidades acumuladas del ${formatDateForMexico(startDate)} al ${formatDateForMexico(endDate)}. Esta consulta es de solo lectura.`;
+
+  try {
+    const records = isSingleDate
+      ? await callApi("getRecordsByDate", { date: startDate })
+      : await callApi("getRecordsByDateRange", { startDate, endDate });
+    APP_STATE.consultation.records = Array.isArray(records) ? records : [];
+    renderConsultation(isSingleDate);
+    setConsultationMessage(successMessage || (APP_STATE.consultation.records.length
+      ? `${APP_STATE.consultation.records.length} registro(s) encontrado(s).`
+      : "No hay registros para el periodo seleccionado."), successMessage ? "success" : "");
+  } catch (error) {
+    console.error(error);
+    APP_STATE.consultation.records = [];
+    renderConsultation(isSingleDate);
+    setConsultationMessage(error.message || "No se pudieron cargar los registros.", "error");
+  } finally {
+    DOM.consultationSearchButton.disabled = false;
+  }
+}
+
+function invalidateConsultationResults() {
+  APP_STATE.consultation.records = [];
+  DOM.consultationTableHead.replaceChildren();
+  DOM.consultationTableBody.replaceChildren();
+  DOM.consultationTotal.textContent = "0";
+
+  const startDate = parseMexicoDate(DOM.consultationStartDate.value);
+  const endDateValue = DOM.consultationEndDate.value.trim();
+  const endDate = endDateValue ? parseMexicoDate(endDateValue) : "";
+  if (!startDate || (endDateValue && !endDate) || (endDate && startDate > endDate)) {
+    DOM.consultationModeMessage.textContent = "Ingresa una fecha Desde valida y, si deseas un rango, una fecha Hasta igual o posterior.";
+  } else if (!endDate) {
+    DOM.consultationModeMessage.textContent = `Fecha seleccionada: ${formatDateForMexico(startDate)}. Presiona Consultar para ver sus registros.`;
+  } else {
+    DOM.consultationModeMessage.textContent = `Rango seleccionado: ${formatDateForMexico(startDate)} al ${formatDateForMexico(endDate)}. La consulta sera de solo lectura.`;
+  }
+  setConsultationMessage("", "");
+}
+
+function renderConsultation(isSingleDate) {
+  const headers = isSingleDate
+    ? ["Actividad", "Cantidad", "Acciones"]
+    : ["Actividad", "Cantidad acumulada"];
+  DOM.consultationTableHead.replaceChildren();
+  DOM.consultationTableBody.replaceChildren();
+
+  const headerRow = document.createElement("tr");
+  headers.forEach((text) => {
+    const th = document.createElement("th");
+    th.textContent = text;
+    headerRow.appendChild(th);
+  });
+  DOM.consultationTableHead.appendChild(headerRow);
+
+  const total = APP_STATE.consultation.records.reduce((sum, record) => sum + Number(record.quantity || 0), 0);
+  DOM.consultationTotal.textContent = String(total);
+
+  if (!isSingleDate) {
+    const groups = new Map();
+    APP_STATE.consultation.records.forEach((record) => {
+      const key = JSON.stringify([record.operator, record.shift, record.activity]);
+      const group = groups.get(key) || {
+        operator: record.operator,
+        shift: record.shift,
+        activity: record.activity,
+        quantity: 0
+      };
+      group.quantity += Number(record.quantity || 0);
+      groups.set(key, group);
+    });
+
+    [...groups.values()]
+      .sort((a, b) => compareConsultationActivities(a, b)
+        || String(a.operator || "").localeCompare(String(b.operator || ""), "es"))
+      .forEach((record) => {
+        const row = document.createElement("tr");
+        [record.activity, String(record.quantity)].forEach((value) => {
+          const cell = document.createElement("td");
+          cell.textContent = value || "";
+          row.appendChild(cell);
+        });
+        DOM.consultationTableBody.appendChild(row);
+      });
+  } else {
+    [...APP_STATE.consultation.records]
+      .sort((a, b) => compareConsultationActivities(a, b)
+        || String(a.time || "").localeCompare(String(b.time || ""))
+        || String(a.operator || "").localeCompare(String(b.operator || ""), "es"))
+      .forEach((record) => {
+        const row = document.createElement("tr");
+        [record.activity, String(record.quantity)].forEach((value) => {
+          const cell = document.createElement("td");
+          cell.textContent = value || "";
+          row.appendChild(cell);
+        });
+
+        const actions = document.createElement("td");
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.className = "btn-secondary btn-small";
+        editButton.dataset.action = "edit";
+        editButton.dataset.id = record.id;
+        editButton.setAttribute("aria-label", "Editar registro");
+        editButton.title = "Editar";
+        editButton.textContent = "✎";
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "btn-danger btn-small";
+        deleteButton.dataset.action = "delete";
+        deleteButton.dataset.id = record.id;
+        deleteButton.setAttribute("aria-label", "Eliminar registro");
+        deleteButton.title = "Eliminar";
+        deleteButton.textContent = "×";
+        actions.append(editButton, deleteButton);
+        row.appendChild(actions);
+        DOM.consultationTableBody.appendChild(row);
+      });
+  }
+
+  if (DOM.consultationTableBody.children.length === 0) {
+    const emptyRow = document.createElement("tr");
+    const emptyCell = document.createElement("td");
+    emptyCell.colSpan = headers.length;
+    emptyCell.className = "empty-state";
+    emptyCell.textContent = "Sin registros para mostrar.";
+    emptyRow.appendChild(emptyCell);
+    DOM.consultationTableBody.appendChild(emptyRow);
+  }
+}
+
+function compareConsultationActivities(a, b) {
+  const activityA = String(a.activity || "");
+  const activityB = String(b.activity || "");
+  const indexA = APP_STATE.activities.indexOf(activityA);
+  const indexB = APP_STATE.activities.indexOf(activityB);
+  const positionA = indexA === -1 ? APP_STATE.activities.length : indexA;
+  const positionB = indexB === -1 ? APP_STATE.activities.length : indexB;
+
+  return positionA - positionB
+    || activityA.localeCompare(activityB, "es", { numeric: true, sensitivity: "base" });
+}
+
+function onConsultationAction(event) {
+  const button = event.target.closest("button[data-action]");
+  if (!button) {
+    return;
+  }
+  const record = APP_STATE.consultation.records.find((item) => String(item.id) === button.dataset.id);
+  if (!record) {
+    setConsultationMessage("No se encontro el registro seleccionado. Actualiza la consulta.", "error");
+    return;
+  }
+
+  if (button.dataset.action === "edit") {
+    openRecordEditor(record);
+  } else if (button.dataset.action === "delete") {
+    deleteConsultationRecord(record);
+  }
+}
+
+function openRecordEditor(record) {
+  APP_STATE.consultation.editingRecordId = record.id;
+  DOM.recordEditorDate.textContent = `Fecha: ${record.date} | Hora: ${record.time}`;
+  setSelectOptions(DOM.recordEditorOperator, [...APP_STATE.operators, record.operator], record.operator);
+  setSelectOptions(DOM.recordEditorShift, APP_STATE.shiftOptions, record.shift);
+  setSelectOptions(DOM.recordEditorActivity, [...APP_STATE.activities, record.activity], record.activity);
+  setSelectOptions(DOM.recordEditorCaptureUser, [...APP_STATE.operators, record.captureUser], record.captureUser);
+  DOM.recordEditorQuantity.value = String(record.quantity);
+  DOM.recordEditorObservations.value = record.observations || "";
+  setRecordEditorMessage("", "");
+  DOM.recordEditor.showModal();
+}
+
+function setSelectOptions(select, values, selectedValue) {
+  select.replaceChildren();
+  [...new Set(values.filter(Boolean))].forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+  select.value = selectedValue;
+}
+
+async function onSaveRecordChanges(event) {
+  event.preventDefault();
+  const quantity = Number(DOM.recordEditorQuantity.value);
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    setRecordEditorMessage("La cantidad debe ser un numero entero positivo.", "error");
+    return;
+  }
+
+  DOM.saveRecordChangesButton.disabled = true;
+  setRecordEditorMessage("Guardando cambios...", "");
+  try {
+    await callApi("updateProductionRecord", {
+      id: APP_STATE.consultation.editingRecordId,
+      date: parseMexicoDate(DOM.consultationStartDate.value),
+      operator: DOM.recordEditorOperator.value,
+      shift: DOM.recordEditorShift.value,
+      activity: DOM.recordEditorActivity.value,
+      quantity,
+      observations: DOM.recordEditorObservations.value.trim(),
+      captureUser: DOM.recordEditorCaptureUser.value
+    });
+    DOM.recordEditor.close();
+    await loadConsultation("Registro actualizado correctamente.");
+  } catch (error) {
+    console.error(error);
+    setRecordEditorMessage(error.message || "No se pudo actualizar el registro.", "error");
+  } finally {
+    DOM.saveRecordChangesButton.disabled = false;
+  }
+}
+
+async function deleteConsultationRecord(record) {
+  if (!window.confirm(`¿Eliminar el registro de ${record.activity} (${record.quantity} cilindros)?`)) {
+    return;
+  }
+  DOM.consultationTableBody.querySelectorAll("button[data-action]").forEach((button) => {
+    button.disabled = true;
+  });
+  try {
+    await callApi("deleteProductionRecord", {
+      id: record.id,
+      date: parseMexicoDate(DOM.consultationStartDate.value)
+    });
+    await loadConsultation("Registro eliminado correctamente.");
+  } catch (error) {
+    console.error(error);
+    setConsultationMessage(error.message || "No se pudo eliminar el registro.", "error");
+    DOM.consultationTableBody.querySelectorAll("button[data-action]").forEach((button) => {
+      button.disabled = false;
+    });
+  }
+}
+
+function setConsultationMessage(message, type) {
+  DOM.consultationMessage.textContent = message;
+  DOM.consultationMessage.classList.remove("success", "error");
+  if (type) {
+    DOM.consultationMessage.classList.add(type);
+  }
+}
+
+function setRecordEditorMessage(message, type) {
+  DOM.recordEditorMessage.textContent = message;
+  DOM.recordEditorMessage.classList.remove("success", "error");
+  if (type) {
+    DOM.recordEditorMessage.classList.add(type);
+  }
 }
 
 async function callApi(action, payload) {

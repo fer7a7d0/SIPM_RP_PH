@@ -68,6 +68,15 @@ function doPost(e) {
       case 'getRecordsByDate':
         return jsonResponse(successResponse('Consulta por fecha completada', getRecordsByDate(payload.date)));
 
+      case 'getRecordsByDateRange':
+        return jsonResponse(successResponse('Consulta por rango completada', getRecordsByDateRange(payload.startDate, payload.endDate)));
+
+      case 'updateProductionRecord':
+        return jsonResponse(successResponse('Registro actualizado correctamente', updateProductionRecord(payload)));
+
+      case 'deleteProductionRecord':
+        return jsonResponse(successResponse('Registro eliminado correctamente', deleteProductionRecord(payload.id, payload.date)));
+
       default:
         return jsonResponse(errorResponse('Accion no soportada: ' + action, 'UNSUPPORTED_ACTION'));
     }
@@ -428,6 +437,10 @@ function isDuplicateRecord(duplicateKey, windowSeconds) {
   const now = new Date();
   for (var i = data.length - 1; i >= 0; i--) {
     const row = data[i];
+    if (String(row[12] || '').toUpperCase() === 'ELIMINADO') {
+      continue;
+    }
+
     const existingKey = String(row[10] || '');
     const timestamp = String(row[9] || '');
 
@@ -505,6 +518,10 @@ function getDailyDashboard(requestedMonthKey) {
   let monthlyDelivered = 0;
 
   data.forEach(function (row) {
+    if (String(row[12] || '').toUpperCase() === 'ELIMINADO') {
+      return;
+    }
+
     const rowDateKey = normalizeDateKeyFromRow(row, timezone);
     const activity = String(row[5] || '');
     const qty = Number(row[6] || 0);
@@ -800,29 +817,177 @@ function getRecordsByDate(dateString) {
   const data = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
   return data
     .filter(function (row) {
-      return normalizeDateKeyFromRow(row, timezone) === requestedDateKey;
+      return String(row[12] || '').toUpperCase() !== 'ELIMINADO'
+        && normalizeDateKeyFromRow(row, timezone) === requestedDateKey;
     })
     .map(function (row) {
-      const dateKey = normalizeDateKeyFromRow(row, timezone);
-      const timeValue = normalizeTimeValue(row[2], timezone);
-      const timestampValue = normalizeTimestampValue(row[9], timezone);
-
-      return {
-        id: row[0],
-        date: dateKey,
-        time: timeValue,
-        operator: row[3],
-        shift: row[4],
-        activity: row[5],
-        quantity: row[6],
-        observations: row[7],
-        captureUser: row[8],
-        timestampServer: timestampValue,
-        duplicateKey: row[10],
-        sourceDevice: row[11],
-        status: row[12]
-      };
+      return mapProductionRecord(row, timezone);
     });
+}
+
+function getRecordsByDateRange(startDate, endDate) {
+  const timezone = Session.getScriptTimeZone();
+  const startDateKey = validateDateKey(startDate);
+  const endDateKey = validateDateKey(endDate);
+
+  if (startDateKey > endDateKey) {
+    throw new Error('La fecha inicial no puede ser posterior a la fecha final');
+  }
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.production);
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    return [];
+  }
+
+  return sheet.getRange(2, 1, lastRow - 1, 13).getValues()
+    .filter(function (row) {
+      if (String(row[12] || '').toUpperCase() === 'ELIMINADO') {
+        return false;
+      }
+      const rowDateKey = normalizeDateKeyFromRow(row, timezone);
+      return rowDateKey >= startDateKey && rowDateKey <= endDateKey;
+    })
+    .map(function (row) {
+      return mapProductionRecord(row, timezone);
+    });
+}
+
+function validateDateKey(value) {
+  const dateKey = String(value || '').trim();
+  const match = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    throw new Error('Fecha invalida para la consulta');
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+    throw new Error('Fecha invalida para la consulta');
+  }
+  return dateKey;
+}
+
+function mapProductionRecord(row, timezone) {
+  return {
+    id: row[0],
+    date: normalizeDateKeyFromRow(row, timezone),
+    time: normalizeTimeValue(row[2], timezone),
+    operator: row[3],
+    shift: row[4],
+    activity: row[5],
+    quantity: row[6],
+    observations: row[7],
+    captureUser: row[8],
+    timestampServer: normalizeTimestampValue(row[9], timezone),
+    duplicateKey: row[10],
+    sourceDevice: row[11],
+    status: row[12]
+  };
+}
+
+function findActiveProductionRow(sheet, recordId) {
+  const id = String(recordId || '').trim();
+  if (!id) {
+    throw new Error('Identificador de registro requerido');
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    throw new Error('No se encontro el registro solicitado');
+  }
+
+  const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  for (var i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) !== id) {
+      continue;
+    }
+    const rowNumber = i + 2;
+    const status = String(sheet.getRange(rowNumber, 13).getValue() || '').toUpperCase();
+    if (status === 'ELIMINADO') {
+      throw new Error('El registro ya fue eliminado');
+    }
+    return rowNumber;
+  }
+  throw new Error('No se encontro el registro solicitado');
+}
+
+function updateProductionRecord(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.production);
+    const rowNumber = findActiveProductionRow(sheet, payload.id);
+    assertProductionRecordDate(sheet, rowNumber, payload.date);
+    const existingActivity = String(sheet.getRange(rowNumber, 6).getValue() || '').trim();
+    const operator = String(payload.operator || '').trim();
+    const shift = String(payload.shift || '').trim();
+    const activity = String(payload.activity || '').trim();
+    const captureUser = String(payload.captureUser || '').trim();
+    const observations = String(payload.observations || '').trim();
+    const quantity = Number(payload.quantity);
+
+    if (!operator) {
+      throw new Error('Operador obligatorio');
+    }
+    if (DEFAULT_SHIFTS.indexOf(shift) === -1) {
+      throw new Error('Turno invalido');
+    }
+    if (!activity || (activity !== existingActivity && getActiveActivities().indexOf(activity) === -1)) {
+      throw new Error('Actividad invalida');
+    }
+    if (!captureUser) {
+      throw new Error('Usuario que captura obligatorio');
+    }
+    if (!isFinite(quantity) || quantity <= 0 || Math.floor(quantity) !== quantity) {
+      throw new Error('La cantidad debe ser un numero entero positivo');
+    }
+    if (quantity > Number(getConfigValue('MAX_CANTIDAD_POR_REGISTRO', '500'))) {
+      throw new Error('Cantidad supera el maximo permitido por configuracion');
+    }
+
+    const minuteBucket = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
+    const duplicateKey = [operator, shift, activity, quantity, minuteBucket].join('|').toLowerCase();
+    sheet.getRange(rowNumber, 4, 1, 6).setValues([[
+      operator,
+      shift,
+      activity,
+      quantity,
+      observations,
+      captureUser
+    ]]);
+    sheet.getRange(rowNumber, 11).setValue(duplicateKey);
+    updateDashboardSnapshot();
+    return { id: payload.id };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function deleteProductionRecord(recordId, requestedDate) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.production);
+    const rowNumber = findActiveProductionRow(sheet, recordId);
+    assertProductionRecordDate(sheet, rowNumber, requestedDate);
+    sheet.getRange(rowNumber, 13).setValue('ELIMINADO');
+    updateDashboardSnapshot();
+    return { id: recordId };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function assertProductionRecordDate(sheet, rowNumber, requestedDate) {
+  const requestedDateKey = validateDateKey(requestedDate);
+  const timezone = Session.getScriptTimeZone();
+  const row = sheet.getRange(rowNumber, 1, 1, 13).getValues()[0];
+  if (normalizeDateKeyFromRow(row, timezone) !== requestedDateKey) {
+    throw new Error('El registro no pertenece a la fecha seleccionada. Actualiza la consulta.');
+  }
 }
 
 function getActiveOperators() {

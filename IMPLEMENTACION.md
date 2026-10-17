@@ -125,7 +125,15 @@ El script crea automaticamente hojas y encabezados si no existen.
 3. Produccion por operador (ranking).
 4. Produccion por turno.
 
-## 9) Parametros configurables
+## 9) Consulta de registros
+
+1. Al abrir Consulta se muestran los registros individuales del dia actual.
+2. La consulta de una sola fecha permite editar o eliminar registros.
+3. Al consultar un rango de fechas, las cantidades se acumulan por operador, turno y actividad; el resultado es de solo lectura.
+4. La eliminacion marca el registro como ELIMINADO para conservarlo en la hoja, y deja de contarlo en consultas y dashboard.
+5. Despues de modificar Code.gs, guardar y actualizar la implementacion de Apps Script para habilitar las acciones de consulta, edicion y eliminacion.
+
+## 10) Parametros configurables
 
 En la hoja Configuracion:
 
@@ -136,7 +144,7 @@ En la hoja Configuracion:
 5. EMPRESA_NOMBRE
 6. VERSION_APP
 
-## 10) Escalabilidad futura (ya considerada)
+## 11) Escalabilidad futura (ya considerada)
 
 La arquitectura esta preparada para agregar:
 
@@ -151,7 +159,7 @@ La arquitectura esta preparada para agregar:
 9. KPI y OEE
 10. Productividad por estacion
 
-## 11) Recomendaciones de operacion
+## 12) Recomendaciones de operacion
 
 1. Mantener catalogo Operadores actualizado (activo = SI/NO).
 2. Revisar diariamente hoja Dashboard.

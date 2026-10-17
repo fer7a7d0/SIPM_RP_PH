@@ -221,6 +221,30 @@ textarea:focus {
   background: #243b53;
 }
 
+.btn-danger {
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 11px 16px;
+  background: var(--color-danger);
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  filter: brightness(0.9);
+}
+
+.btn-small {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  margin: 2px;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
 .status-message {
   margin-top: 12px;
   min-height: 22px;
@@ -259,6 +283,105 @@ textarea:focus {
   padding: 9px 10px;
   background: #f8fafc;
   color: var(--color-text);
+}
+
+.consultation-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consultation-controls label {
+  color: var(--color-muted);
+}
+
+.date-picker-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.date-picker-control .month-filter-input {
+  width: 150px;
+  padding-right: 40px;
+}
+
+.date-picker-button {
+  position: absolute;
+  right: 4px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-primary-dark);
+  background: transparent;
+  cursor: pointer;
+}
+
+.date-picker-button:hover {
+  background: rgba(11, 110, 79, 0.12);
+}
+
+.date-picker-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.date-picker-native {
+  position: absolute;
+  z-index: -1;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.consultation-summary {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: #e9f8f2;
+  font-weight: 600;
+}
+
+.consultation-table {
+  min-width: 760px;
+}
+
+.empty-state {
+  padding: 18px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.record-editor {
+  width: min(680px, 94vw);
+  max-height: 90vh;
+  overflow: auto;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  color: var(--color-text);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-main);
+}
+
+.record-editor::backdrop {
+  background: rgba(16, 42, 67, 0.58);
+}
+
+.record-editor .form-grid {
+  margin-top: 14px;
 }
 
 .kpi-grid {
@@ -446,6 +569,14 @@ thead th {
     background: #27476e;
   }
 
+  .btn-danger {
+    background: #b42318;
+  }
+
+  .consultation-summary {
+    background: #10312b;
+  }
+
   .kpi-card {
     background: #10312b;
   }
@@ -538,6 +669,25 @@ thead th {
   .dashboard-controls {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .consultation-controls {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .consultation-controls label,
+  .consultation-controls .month-filter-input,
+  .consultation-controls button {
+    width: 100%;
+  }
+
+  .consultation-controls .date-picker-control {
+    width: 100%;
+  }
+
+  .consultation-controls .date-picker-control .month-filter-input {
+    width: 100%;
   }
 
   .month-filter-input {
