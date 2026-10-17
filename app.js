@@ -143,7 +143,7 @@ function bindEvents() {
     loadConsultation();
   });
   DOM.consultationSearchButton.addEventListener("click", () => loadConsultation());
-  DOM.consultationStartDate.addEventListener("change", invalidateConsultationResults);
+  DOM.consultationStartDate.addEventListener("change", onConsultationStartDateChange);
   DOM.consultationEndDate.addEventListener("change", invalidateConsultationResults);
   DOM.consultationStartDatePickerButton.addEventListener("click", () => openConsultationDateCalendar("start"));
   DOM.consultationEndDatePickerButton.addEventListener("click", () => openConsultationDateCalendar("end"));
@@ -153,6 +153,7 @@ function bindEvents() {
   DOM.consultationStartDateNextMonth.addEventListener("click", () => shiftConsultationCalendarMonth("start", 1));
   DOM.consultationEndDatePreviousMonth.addEventListener("click", () => shiftConsultationCalendarMonth("end", -1));
   DOM.consultationEndDateNextMonth.addEventListener("click", () => shiftConsultationCalendarMonth("end", 1));
+  window.addEventListener("resize", positionOpenConsultationDateCalendars);
   document.addEventListener("click", onConsultationCalendarOutsideClick);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
@@ -192,6 +193,25 @@ function openConsultationDateCalendar(which) {
   calendar.hidden = false;
   button.setAttribute("aria-expanded", "true");
   renderConsultationDateCalendar(which);
+  positionConsultationDateCalendar(calendar);
+}
+
+function positionOpenConsultationDateCalendars() {
+  [DOM.consultationStartDateCalendar, DOM.consultationEndDateCalendar]
+    .filter((calendar) => !calendar.hidden)
+    .forEach(positionConsultationDateCalendar);
+}
+
+function positionConsultationDateCalendar(calendar) {
+  const control = calendar.parentElement;
+  const controlRect = control.getBoundingClientRect();
+  const calendarRect = calendar.getBoundingClientRect();
+  const viewportPadding = 8;
+  const maxLeft = Math.max(viewportPadding, window.innerWidth - calendarRect.width - viewportPadding);
+  const left = Math.min(Math.max(controlRect.left, viewportPadding), maxLeft);
+
+  calendar.style.left = `${left - controlRect.left}px`;
+  calendar.style.right = "auto";
 }
 
 function closeConsultationDateCalendars() {
@@ -304,6 +324,17 @@ function onConsultationCalendarClick(event, which) {
   const input = which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
   input.value = formatDateForMexico(dayButton.dataset.date);
   closeConsultationDateCalendars();
+  if (which === "start") {
+    onConsultationStartDateChange();
+  } else {
+    invalidateConsultationResults();
+  }
+}
+
+function onConsultationStartDateChange() {
+  if (parseMexicoDate(DOM.consultationStartDate.value)) {
+    DOM.consultationEndDate.value = "";
+  }
   invalidateConsultationResults();
 }
 
