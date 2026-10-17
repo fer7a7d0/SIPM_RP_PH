@@ -924,43 +924,23 @@ thead th {
 }
 
 @media (max-width: 600px) {
+  .record-editor form,
   .record-editor .form-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .record-editor label {
+    width: 100%;
     min-width: 0;
-    gap: 3px;
-    font-size: 0.82rem;
   }
 
+  .record-editor .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .record-editor label,
   .record-editor input,
   .record-editor select,
   .record-editor textarea {
+    width: 100%;
     min-width: 0;
-    padding: 7px 8px;
-    font-size: 0.88rem;
-  }
-
-  .record-editor textarea {
-    height: 52px;
-  }
-
-  .record-editor .status-message {
-    margin-top: 8px;
-    min-height: 18px;
-    font-size: 0.82rem;
-  }
-
-  .record-editor .action-row {
-    margin-top: 8px;
-    gap: 8px;
-  }
-
-  .record-editor .action-row button {
-    padding: 9px 12px;
-    font-size: 0.88rem;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 }
