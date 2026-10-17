@@ -355,13 +355,13 @@ function createProductionRecord(payload) {
   const recordId = generateRecordId();
   const now = new Date();
   const timezone = APP_TIME_ZONE;
-  const serverDate = Utilities.formatDate(now, timezone, 'yyyy-MM-dd');
+  const productionDate = String(payload.date).trim();
   const serverTime = Utilities.formatDate(now, timezone, 'HH:mm:ss');
   const timestamp = now.toISOString();
 
   const row = [
     recordId,
-    serverDate,
+    productionDate,
     serverTime,
     payload.operator,
     payload.shift,
@@ -387,6 +387,19 @@ function createProductionRecord(payload) {
 }
 
 function validatePayload(payload) {
+  const productionDate = String(payload.date || '').trim();
+  const dateMatch = productionDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!dateMatch) {
+    throw new Error('Fecha de produccion invalida');
+  }
+
+  const parsedDate = new Date(Date.UTC(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3])));
+  if (parsedDate.getUTCFullYear() !== Number(dateMatch[1])
+    || parsedDate.getUTCMonth() !== Number(dateMatch[2]) - 1
+    || parsedDate.getUTCDate() !== Number(dateMatch[3])) {
+    throw new Error('Fecha de produccion invalida');
+  }
+
   if (!payload.operator || String(payload.operator).trim() === '') {
     throw new Error('Operador vacio no permitido');
   }
@@ -650,20 +663,14 @@ function isValidMonthKey(monthKey) {
 }
 
 function normalizeDateKeyFromRow(row, timezone) {
-  // Prioriza timestamp del servidor; si no existe, intenta normalizar la fecha visible.
-  const serverTimestamp = row[9];
-  const fromTimestamp = normalizeDateKeyFromAny(serverTimestamp, timezone);
-  if (fromTimestamp) {
-    return fromTimestamp;
-  }
-
+  // La fecha visible es la fecha de produccion; el timestamp conserva la hora de captura.
   const dateCell = row[1];
   const fromDateCell = normalizeDateKeyFromAny(dateCell, timezone);
   if (fromDateCell) {
     return fromDateCell;
   }
 
-  return '';
+  return normalizeDateKeyFromAny(row[9], timezone);
 }
 
 function normalizeDateKeyFromAny(value, timezone) {

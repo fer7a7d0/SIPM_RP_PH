@@ -59,6 +59,28 @@
             <form id="productionForm" novalidate>
               <div class="form-grid">
                 <label>
+                  Fecha
+                  <div class="date-picker-control production-date-picker">
+                    <input id="productionDate" class="production-date-input" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="dd/mm/aaaa" aria-label="Fecha de producción" required />
+                    <button id="productionDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha de producción" title="Elegir fecha" aria-expanded="false">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                        <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+                        <path d="M8 3v4m8-4v4M4 9h16"></path>
+                      </svg>
+                    </button>
+                    <div id="productionDateCalendar" class="date-picker-calendar" role="dialog" aria-label="Calendario de fecha de producción" hidden>
+                      <div class="calendar-header">
+                        <button id="productionDatePreviousMonth" class="calendar-nav-button" type="button" aria-label="Mes anterior">&lsaquo;</button>
+                        <strong id="productionDateMonthLabel"></strong>
+                        <button id="productionDateNextMonth" class="calendar-nav-button" type="button" aria-label="Mes siguiente">&rsaquo;</button>
+                      </div>
+                      <div class="calendar-grid" id="productionDateCalendarGrid"></div>
+                      <button id="productionDateTodayButton" class="calendar-today-button" type="button">Hoy</button>
+                    </div>
+                  </div>
+                </label>
+
+                <label>
                   Operador
                   <select id="operator" required>
                     <option value="">Selecciona un operador</option>
@@ -209,6 +231,7 @@
                         <button id="consultationStartDateNextMonth" class="calendar-nav-button" type="button" aria-label="Mes siguiente">&rsaquo;</button>
                       </div>
                       <div class="calendar-grid" id="consultationStartDateCalendarGrid"></div>
+                      <button id="consultationStartDateTodayButton" class="calendar-today-button" type="button">Hoy</button>
                     </div>
                   </div>
                 </div>
@@ -229,6 +252,7 @@
                         <button id="consultationEndDateNextMonth" class="calendar-nav-button" type="button" aria-label="Mes siguiente">&rsaquo;</button>
                       </div>
                       <div class="calendar-grid" id="consultationEndDateCalendarGrid"></div>
+                      <button id="consultationEndDateTodayButton" class="calendar-today-button" type="button">Hoy</button>
                     </div>
                   </div>
                 </div>

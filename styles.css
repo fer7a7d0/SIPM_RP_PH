@@ -348,6 +348,11 @@ textarea:focus {
   padding-right: 40px;
 }
 
+.production-date-picker .production-date-input {
+  width: 100%;
+  padding-right: 40px;
+}
+
 .date-picker-button {
   position: absolute;
   right: 4px;
@@ -401,7 +406,6 @@ textarea:focus {
   gap: 8px;
   margin-bottom: 8px;
   text-align: center;
-  text-transform: capitalize;
 }
 
 .calendar-nav-button,
@@ -416,6 +420,22 @@ textarea:focus {
 .calendar-nav-button {
   height: 32px;
   font-size: 1.35rem;
+}
+
+.calendar-today-button {
+  display: block;
+  margin: 8px 0 0 auto;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-dark);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-today-button:hover {
+  background: rgba(11, 110, 79, 0.12);
 }
 
 .calendar-nav-button:hover,
