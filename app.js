@@ -865,6 +865,10 @@ function openRecordEditor(record) {
   DOM.recordEditorObservations.value = record.observations || "";
   setRecordEditorMessage("", "");
   DOM.recordEditor.showModal();
+  const activeElement = DOM.recordEditor.ownerDocument.activeElement;
+  if (DOM.recordEditor.contains(activeElement)) {
+    activeElement.blur();
+  }
 }
 
 function setSelectOptions(select, values, selectedValue) {

@@ -537,6 +537,14 @@ textarea:focus {
   margin-top: 14px;
 }
 
+@media (max-width: 600px) {
+  .record-editor {
+    width: 90vw;
+    max-height: 85vh;
+    padding: 16px;
+  }
+}
+
 .kpi-grid {
   margin-top: 14px;
   display: grid;
