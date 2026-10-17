@@ -321,15 +321,16 @@ textarea:focus {
   gap: 8px;
 }
 
+.consultation-date-filter {
+  display: grid;
+  gap: 4px;
+}
+
 .consultation-header {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;
-}
-
-.consultation-header > .panel-note {
-  margin: -8px 0 0;
 }
 
 .consultation-controls label {
@@ -468,7 +469,7 @@ textarea:focus {
 }
 
 .consultation-table th:first-child {
-  width: 65%;
+  width: 60%;
 }
 
 .consultation-table th:nth-child(2) {
@@ -476,11 +477,16 @@ textarea:focus {
 }
 
 .consultation-table th:last-child:not(:first-child):not(:nth-child(2)) {
-  width: 15%;
+  width: 20%;
 }
 
 .consultation-table td {
   overflow-wrap: anywhere;
+}
+
+.consultation-table .consultation-actions {
+  white-space: nowrap;
+  text-align: center;
 }
 
 .consultation-table td:nth-child(2),
@@ -841,6 +847,10 @@ thead th {
     gap: 6px 8px;
   }
 
+  .consultation-date-filter {
+    min-width: 0;
+  }
+
   .consultation-controls label {
     font-size: 0.82rem;
   }
@@ -862,7 +872,7 @@ thead th {
   }
 
   .consultation-table th:first-child {
-    width: 60%;
+    width: 55%;
   }
 
   .consultation-table th:nth-child(2) {
@@ -870,7 +880,7 @@ thead th {
   }
 
   .consultation-table th:last-child:not(:first-child):not(:nth-child(2)) {
-    width: 18%;
+    width: 25%;
   }
 
   .consultation-table th,

@@ -775,6 +775,7 @@ function renderConsultation(isSingleDate) {
         });
 
         const actions = document.createElement("td");
+        actions.className = "consultation-actions";
         const editButton = document.createElement("button");
         editButton.type = "button";
         editButton.className = "btn-secondary btn-small";
