@@ -8,7 +8,9 @@
 */
 
 // Reemplazar con la URL del despliegue de Apps Script (Web App).
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbzH47tQDA6yodj1_Fu6lZAiy9HnUnL89RCAozgNOp2ZUtdO2DpKLY8MJPlsL8bSHvB6/exec";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbw1NkRWaonyGab9AjuvNEwK3wNXVYctoQTAd_nrtcR-ONan1DNpbydsHXFt02lrGTl0/exec";
+const APP_TIME_ZONE = "America/Monterrey";
+const NUMBER_FORMATTER = new Intl.NumberFormat("es-MX");
 
 const APP_STATE = {
   operators: [],
@@ -162,12 +164,18 @@ function bindEvents() {
 }
 
 function getCurrentMonthKey() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return formatDateKey(new Date()).slice(0, 7);
 }
 
 function formatDateKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function formatDateForMexico(dateKey) {
@@ -355,8 +363,8 @@ function shiftDateKey(dateKey, deltaDays) {
   }
 
   const parts = dateKey.split("-").map(Number);
-  const shifted = new Date(parts[0], parts[1] - 1, parts[2] + deltaDays);
-  return formatDateKey(shifted);
+  const shifted = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + deltaDays));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}-${String(shifted.getUTCDate()).padStart(2, "0")}`;
 }
 
 function buildExportDateCandidates(serverDate) {
@@ -380,8 +388,8 @@ function startClock() {
 
 function updateClock() {
   const now = new Date();
-  DOM.currentDate.textContent = now.toLocaleDateString("es-EC");
-  DOM.currentTime.textContent = now.toLocaleTimeString("es-EC");
+  DOM.currentDate.textContent = now.toLocaleDateString("es-MX", { timeZone: APP_TIME_ZONE });
+  DOM.currentTime.textContent = now.toLocaleTimeString("es-MX", { timeZone: APP_TIME_ZONE });
 }
 
 function activateScreen(target) {
@@ -524,8 +532,8 @@ function buildPayloadFromForm() {
   const shift = DOM.shiftSelect.value.trim();
 
   return {
-    date: now.toLocaleDateString("es-EC"),
-    time: now.toLocaleTimeString("es-EC"),
+    date: formatDateForMexico(formatDateKey(now)),
+    time: now.toLocaleTimeString("es-MX", { timeZone: APP_TIME_ZONE }),
     operator,
     shift,
     activity,
@@ -537,7 +545,15 @@ function buildPayloadFromForm() {
       shift,
       activity,
       quantity,
-      minuteBucket: now.toISOString().slice(0, 16)
+      minuteBucket: new Intl.DateTimeFormat("sv-SE", {
+        timeZone: APP_TIME_ZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      }).format(now)
     }),
     sourceDevice: navigator.userAgent
   };
@@ -613,11 +629,11 @@ async function loadDashboard() {
 }
 
 function renderDashboard() {
-  DOM.kpiTotalDay.textContent = String(APP_STATE.dashboard.totalDay);
-  DOM.kpiTotalMonth.textContent = String(APP_STATE.dashboard.totalMonth);
-  DOM.kpiBalanceDay.textContent = String(APP_STATE.dashboard.balanceDay);
-  DOM.kpiMonthReception.textContent = String(APP_STATE.dashboard.monthlyReception);
-  DOM.kpiMonthDelivered.textContent = String(APP_STATE.dashboard.monthlyDelivered);
+  DOM.kpiTotalDay.textContent = formatQuantity(APP_STATE.dashboard.totalDay);
+  DOM.kpiTotalMonth.textContent = formatQuantity(APP_STATE.dashboard.totalMonth);
+  DOM.kpiBalanceDay.textContent = formatQuantity(APP_STATE.dashboard.balanceDay);
+  DOM.kpiMonthReception.textContent = formatQuantity(APP_STATE.dashboard.monthlyReception);
+  DOM.kpiMonthDelivered.textContent = formatQuantity(APP_STATE.dashboard.monthlyDelivered);
   DOM.kpiMonthLabel.textContent = APP_STATE.dashboard.monthKey
     ? `Periodo ${APP_STATE.dashboard.monthKey}`
     : "Periodo --";
@@ -638,7 +654,7 @@ function renderStatList(targetElement, keys, valuesMap) {
   targetElement.innerHTML = "";
   keys.forEach((key) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${key}</span><strong>${valuesMap[key] || 0}</strong>`;
+    li.innerHTML = `<span>${key}</span><strong>${formatQuantity(valuesMap[key] || 0)}</strong>`;
     targetElement.appendChild(li);
   });
 }
@@ -650,10 +666,14 @@ function renderOperatorTable(targetElement, rows) {
     tr.innerHTML = `
       <td>${index + 1}</td>
       <td>${item.operator}</td>
-      <td>${item.total}</td>
+      <td>${formatQuantity(item.total)}</td>
     `;
     targetElement.appendChild(tr);
   });
+}
+
+function formatQuantity(value) {
+  return NUMBER_FORMATTER.format(Number(value));
 }
 
 async function loadConsultation(successMessage) {
@@ -702,7 +722,6 @@ function invalidateConsultationResults() {
 }
 
 function renderConsultation(isSingleDate) {
-  const formatQuantity = new Intl.NumberFormat("es-MX").format;
   const headers = isSingleDate
     ? ["Actividad", "Cantidad", ""]
     : ["Actividad", "Cantidad acumulada"];

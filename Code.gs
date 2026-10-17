@@ -16,6 +16,8 @@ const SHEET_NAMES = {
   config: 'Configuracion'
 };
 
+const APP_TIME_ZONE = 'America/Monterrey';
+
 const DEFAULT_ACTIVITIES = [
   'Desvalvulado',
   'Prueba Hidrostatica (PH)',
@@ -215,7 +217,7 @@ function seedDefaultOperatorsIfEmpty() {
     return;
   }
 
-  const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  const now = Utilities.formatDate(new Date(), APP_TIME_ZONE, 'yyyy-MM-dd');
   const defaultRows = [
     ['OP-001', 'Operador Demo 1', 'SI', 'Matutino', now, '', 'Inicial'],
     ['OP-002', 'Operador Demo 2', 'SI', 'Vespertino', now, '', 'Inicial'],
@@ -243,7 +245,7 @@ function seedDefaultConfigIfMissing(configSheet) {
   const defaults = [
     ['APP_NOMBRE', 'Control de Produccion Taller', 'Nombre visible del sistema', 'SI'],
     ['EMPRESA_NOMBRE', 'Taller de Cilindros', 'Razon social u operativa', 'SI'],
-    ['ZONA_HORARIA', Session.getScriptTimeZone(), 'Zona horaria operativa', 'SI'],
+    ['ZONA_HORARIA', APP_TIME_ZONE, 'Zona horaria operativa', 'SI'],
     ['INVENTARIO_BASE_INICIAL', '0', 'Saldo base usado cuando no existe historial previo', 'SI'],
     ['DUPLICADO_VENTANA_SEGUNDOS', '90', 'Ventana para prevenir doble registro', 'SI'],
     ['MAX_CANTIDAD_POR_REGISTRO', '500', 'Limite superior por captura', 'SI'],
@@ -352,10 +354,10 @@ function createProductionRecord(payload) {
 
   const recordId = generateRecordId();
   const now = new Date();
-  const timezone = Session.getScriptTimeZone();
+  const timezone = APP_TIME_ZONE;
   const serverDate = Utilities.formatDate(now, timezone, 'yyyy-MM-dd');
   const serverTime = Utilities.formatDate(now, timezone, 'HH:mm:ss');
-  const timestamp = Utilities.formatDate(now, timezone, 'yyyy-MM-dd HH:mm:ss');
+  const timestamp = now.toISOString();
 
   const row = [
     recordId,
@@ -470,7 +472,7 @@ function parseTimestamp(text) {
 }
 
 function getDailyDashboard(requestedMonthKey) {
-  const timezone = Session.getScriptTimeZone();
+  const timezone = APP_TIME_ZONE;
   const today = Utilities.formatDate(new Date(), timezone, 'yyyy-MM-dd');
   const currentMonthKey = today.slice(0, 7);
   const monthKey = isValidMonthKey(requestedMonthKey) ? requestedMonthKey : currentMonthKey;
@@ -679,10 +681,19 @@ function normalizeDateKeyFromAny(value, timezone) {
     return '';
   }
 
-  // Si ya viene en formato yyyy-MM-dd (con o sin hora), conserva la fecha textual.
-  const ymdMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T].*)?$/);
-  if (ymdMatch) {
-    return ymdMatch[1] + '-' + ymdMatch[2] + '-' + ymdMatch[3];
+  const dateOnlyMatch = text.match(/^(\d{4}-\d{2}-\d{2})$/);
+  if (dateOnlyMatch) {
+    return dateOnlyMatch[1];
+  }
+
+  const legacyTimestampMatch = text.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})$/);
+  if (legacyTimestampMatch) {
+    const legacyTimestamp = Utilities.parseDate(
+      text.replace('T', ' '),
+      Session.getScriptTimeZone(),
+      'yyyy-MM-dd HH:mm:ss'
+    );
+    return Utilities.formatDate(legacyTimestamp, timezone, 'yyyy-MM-dd');
   }
 
   // Caso ISO o timestamp parseable por Date.
@@ -738,7 +749,12 @@ function normalizeTimestampValue(value, timezone) {
   const text = String(value).trim();
   const ymdhms = text.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})$/);
   if (ymdhms) {
-    return ymdhms[1] + ' ' + ymdhms[2];
+    const legacyTimestamp = Utilities.parseDate(
+      text.replace('T', ' '),
+      Session.getScriptTimeZone(),
+      'yyyy-MM-dd HH:mm:ss'
+    );
+    return Utilities.formatDate(legacyTimestamp, timezone, 'yyyy-MM-dd HH:mm:ss');
   }
 
   const nativeDate = new Date(text.replace(' ', 'T'));
@@ -761,7 +777,7 @@ function normalizeActivityName(value) {
 function updateDashboardSnapshot() {
   const dashboard = getDailyDashboard();
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.dashboard);
-  const timezone = Session.getScriptTimeZone();
+  const timezone = APP_TIME_ZONE;
 
   const row = [
     dashboard.date,
@@ -801,7 +817,7 @@ function getRecordsByDate(dateString) {
     throw new Error('Fecha requerida para la consulta');
   }
 
-  const timezone = Session.getScriptTimeZone();
+  const timezone = APP_TIME_ZONE;
   const requestedDateKey = normalizeDateKeyFromAny(dateString, timezone);
   if (!requestedDateKey) {
     throw new Error('Fecha invalida para la consulta');
@@ -826,7 +842,7 @@ function getRecordsByDate(dateString) {
 }
 
 function getRecordsByDateRange(startDate, endDate) {
-  const timezone = Session.getScriptTimeZone();
+  const timezone = APP_TIME_ZONE;
   const startDateKey = validateDateKey(startDate);
   const endDateKey = validateDateKey(endDate);
 
@@ -948,7 +964,7 @@ function updateProductionRecord(payload) {
       throw new Error('Cantidad supera el maximo permitido por configuracion');
     }
 
-    const minuteBucket = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
+    const minuteBucket = Utilities.formatDate(new Date(), APP_TIME_ZONE, 'yyyy-MM-dd HH:mm');
     const duplicateKey = [operator, shift, activity, quantity, minuteBucket].join('|').toLowerCase();
     sheet.getRange(rowNumber, 4, 1, 6).setValues([[
       operator,
@@ -983,7 +999,7 @@ function deleteProductionRecord(recordId, requestedDate) {
 
 function assertProductionRecordDate(sheet, rowNumber, requestedDate) {
   const requestedDateKey = validateDateKey(requestedDate);
-  const timezone = Session.getScriptTimeZone();
+  const timezone = APP_TIME_ZONE;
   const row = sheet.getRange(rowNumber, 1, 1, 13).getValues()[0];
   if (normalizeDateKeyFromRow(row, timezone) !== requestedDateKey) {
     throw new Error('El registro no pertenece a la fecha seleccionada. Actualiza la consulta.');
@@ -1076,8 +1092,7 @@ function getConfigValue(key, fallbackValue) {
 
 function generateRecordId() {
   const now = new Date();
-  const timezone = Session.getScriptTimeZone();
-  const base = Utilities.formatDate(now, timezone, 'yyyyMMdd-HHmmss');
+  const base = Utilities.formatDate(now, APP_TIME_ZONE, 'yyyyMMdd-HHmmss');
   const random = Math.floor(1000 + Math.random() * 9000);
   return 'PROD-' + base + '-' + random;
 }
