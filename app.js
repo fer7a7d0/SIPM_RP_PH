@@ -31,10 +31,7 @@ const APP_STATE = {
     monthlyDelivered: 0,
     byActivityMonth: {},
     byShiftMonth: {},
-    byOperatorMonth: [],
-    byActivity: {},
-    byShift: {},
-    byOperator: []
+    byOperatorMonth: []
   },
   consultation: {
     records: [],
@@ -104,9 +101,6 @@ const DOM = {
   kpiMonthDelivered: document.getElementById("kpiMonthDelivered"),
   kpiMonthLabel: document.getElementById("kpiMonthLabel"),
   kpiFlowMonthLabel: document.getElementById("kpiFlowMonthLabel"),
-  activityListDay: document.getElementById("activityListDay"),
-  shiftListDay: document.getElementById("shiftListDay"),
-  operatorTableBodyDay: document.getElementById("operatorTableBodyDay"),
   activityListMonth: document.getElementById("activityListMonth"),
   shiftListMonth: document.getElementById("shiftListMonth"),
   operatorTableBodyMonth: document.getElementById("operatorTableBodyMonth")
@@ -608,9 +602,6 @@ async function loadDashboard() {
     APP_STATE.dashboard.balanceDay = data.balanceDay || 0;
     APP_STATE.dashboard.monthlyReception = data.monthlyReception || 0;
     APP_STATE.dashboard.monthlyDelivered = data.monthlyDelivered || 0;
-    APP_STATE.dashboard.byActivity = data.byActivity || {};
-    APP_STATE.dashboard.byShift = data.byShift || {};
-    APP_STATE.dashboard.byOperator = data.byOperator || [];
 
     renderDashboard();
   } catch (error) {
@@ -637,10 +628,6 @@ function renderDashboard() {
   if (DOM.monthSelector.value !== APP_STATE.dashboard.monthKey && APP_STATE.dashboard.monthKey) {
     DOM.monthSelector.value = APP_STATE.dashboard.monthKey;
   }
-
-  renderStatList(DOM.activityListDay, APP_STATE.activities, APP_STATE.dashboard.byActivity);
-  renderStatList(DOM.shiftListDay, APP_STATE.shiftOptions, APP_STATE.dashboard.byShift);
-  renderOperatorTable(DOM.operatorTableBodyDay, APP_STATE.dashboard.byOperator);
 
   renderStatList(DOM.activityListMonth, APP_STATE.activities, APP_STATE.dashboard.byActivityMonth);
   renderStatList(DOM.shiftListMonth, APP_STATE.shiftOptions, APP_STATE.dashboard.byShiftMonth);
