@@ -609,6 +609,270 @@ textarea:focus {
   font-size: 1.15rem;
 }
 
+.monthly-flow-chart-panel {
+  margin-top: 14px;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.monthly-flow-chart-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.monthly-flow-chart-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.monthly-flow-chart-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+
+.monthly-flow-chart-year-label {
+  display: inline-flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 8px;
+  color: var(--color-muted);
+  font-size: 0.86rem;
+}
+
+.monthly-flow-chart-year-label select {
+  min-width: 88px;
+  padding: 6px 9px;
+}
+
+.monthly-flow-chart-activity-filter {
+  position: relative;
+  z-index: 3;
+  color: var(--color-text);
+  color-scheme: light;
+  font-size: 0.86rem;
+}
+
+.monthly-flow-chart-activity-filter summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #bcccdc;
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  cursor: pointer;
+  list-style: none;
+}
+
+.monthly-flow-chart-activity-filter summary::-webkit-details-marker {
+  display: none;
+}
+
+.monthly-flow-chart-activity-filter summary::after {
+  width: 0;
+  height: 0;
+  margin-left: auto;
+  border-top: 5px solid var(--color-muted);
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+  content: "";
+  transition: transform 150ms ease;
+}
+
+.monthly-flow-chart-activity-filter[open] summary::after {
+  transform: rotate(180deg);
+}
+
+#monthlyFlowChartSelectedCount {
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.monthly-flow-chart-activity-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  width: min(360px, calc(100vw - 96px));
+  padding: 10px;
+  border: 1px solid #bcccdc;
+  border-radius: var(--radius-md);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-main);
+}
+
+.monthly-flow-chart-filter-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #d9e2ec;
+}
+
+.monthly-flow-chart-filter-actions button {
+  padding: 5px 7px;
+  border: 0;
+  color: var(--color-primary-dark);
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.monthly-flow-chart-activity-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 8px;
+  max-height: 230px;
+  margin-top: 8px;
+  overflow-y: auto;
+}
+
+.monthly-flow-chart-activity-options label {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.monthly-flow-chart-activity-options input {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--color-primary);
+}
+
+.monthly-flow-chart-activity-options label > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthly-flow-chart-activity-swatch {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.monthly-flow-chart-plot {
+  position: relative;
+  width: 100%;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.monthly-flow-chart-plot svg {
+  display: block;
+  width: 100%;
+  height: 272px;
+  overflow: visible;
+}
+
+.monthly-flow-chart-gridline {
+  stroke: #dbe4ec;
+  stroke-dasharray: 3 4;
+  stroke-width: 1;
+}
+
+.monthly-flow-chart-axis-label,
+.monthly-flow-chart-month-label {
+  fill: var(--color-muted);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.monthly-flow-chart-bar {
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.monthly-flow-chart-bar:hover {
+  opacity: 0.78;
+}
+
+.monthly-flow-chart-bar:focus-visible {
+  outline: none;
+  stroke: var(--color-text);
+  stroke-width: 2;
+}
+
+.monthly-flow-chart-reception {
+  fill: #0b6e4f;
+}
+
+.monthly-flow-chart-delivered {
+  fill: #2f6fed;
+}
+
+.monthly-flow-chart-zero-bar {
+  fill: transparent;
+  cursor: default;
+}
+
+.monthly-flow-chart-empty-label {
+  fill: var(--color-muted);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.monthly-flow-chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  max-width: calc(100% - 12px);
+  padding: 7px 9px;
+  border-radius: 4px;
+  color: #ffffff;
+  background: #102a43;
+  box-shadow: var(--shadow-main);
+  font-size: 0.8rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.monthly-flow-chart-tooltip[hidden] {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .monthly-flow-chart-controls {
+    align-items: flex-start;
+  }
+
+  .monthly-flow-chart-activity-menu {
+    left: 0;
+  }
+
+  .monthly-flow-chart-plot svg {
+    height: 236px;
+  }
+
+  .monthly-flow-chart-axis-label,
+  .monthly-flow-chart-month-label {
+    font-size: 9px;
+  }
+}
+
+.monthly-flow-chart-empty {
+  padding: 28px 12px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+
 .section-title {
   margin-top: 16px;
   color: #334e68;
@@ -755,6 +1019,30 @@ thead th {
   .consultation-table tfoot {
     background: #132b26;
     color: #e5edf7;
+  }
+
+  .monthly-flow-chart-activity-filter {
+    color-scheme: dark;
+  }
+
+  .monthly-flow-chart-activity-filter summary {
+    border-color: #2a3d5f;
+    background: #111c2e;
+    color: #e5edf7;
+  }
+
+  .monthly-flow-chart-activity-menu {
+    border-color: #2a3d5f;
+    background: #0f1728;
+    color: #e5edf7;
+  }
+
+  .monthly-flow-chart-filter-actions button {
+    color: #6ee7b7;
+  }
+
+  .monthly-flow-chart-filter-actions {
+    border-color: #2a3d5f;
   }
 
   .kpi-card {

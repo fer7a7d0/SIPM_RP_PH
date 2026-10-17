@@ -1,14 +1,17 @@
 /*
   Control de Produccion - Frontend principal
-  Este archivo concentra:
+    APP_STATE.dashboard.monthlyFlowSelectedActivities = new Set(
+      activityNames.filter(isDefaultMonthlyFlowActivity).map(getMonthlyFlowActivityKey)
+    );
   - Estado global de la app
+    const availableActivityKeys = new Set(activityNames.map(getMonthlyFlowActivityKey));
   - Validaciones de captura
-  - Integracion con API de Google Apps Script
+      [...APP_STATE.dashboard.monthlyFlowSelectedActivities].filter((key) => availableActivityKeys.has(key))
   - Render de dashboard y exportacion CSV local
 */
 
 // Reemplazar con la URL del despliegue de Apps Script (Web App).
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbyMHu48u79rxwmLWBg6cHdAU7zlVeb7XnLOs3I2IhzW6gsnadLb8AR9L5LpB7yqA-OI/exec";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbzzuMDGTYLJrKE8XyrG-W-IelEPnxhFwMlA3r83zclqfnp7Cdc2orqBIqSW04H1FBVF/exec";
 const APP_TIME_ZONE = "America/Monterrey";
 const NUMBER_FORMATTER = new Intl.NumberFormat("es-MX");
 
@@ -31,7 +34,8 @@ const APP_STATE = {
     balanceDay: 0,
     monthlyReception: 0,
     monthlyDelivered: 0,
-    byActivityMonth: {},
+    monthlyFlowByMonth: [],
+    monthlyFlowSelectedActivities: null,
     byShiftMonth: {},
     byOperatorMonth: []
   },
@@ -43,6 +47,7 @@ const APP_STATE = {
   },
   productionCalendarMonth: "",
   recordEditorCalendarMonth: "",
+  monthlyFlowChartYear: "",
   duplicateCache: new Set()
 };
 
@@ -123,7 +128,15 @@ const DOM = {
   kpiMonthDelivered: document.getElementById("kpiMonthDelivered"),
   kpiMonthLabel: document.getElementById("kpiMonthLabel"),
   kpiFlowMonthLabel: document.getElementById("kpiFlowMonthLabel"),
-  activityListMonth: document.getElementById("activityListMonth"),
+  monthlyFlowChartYear: document.getElementById("monthlyFlowChartYear"),
+  monthlyFlowChartActivityFilter: document.getElementById("monthlyFlowChartActivityFilter"),
+  monthlyFlowChartActivityOptions: document.getElementById("monthlyFlowChartActivityOptions"),
+  monthlyFlowChartSelectedCount: document.getElementById("monthlyFlowChartSelectedCount"),
+  monthlyFlowChartSelectAll: document.getElementById("monthlyFlowChartSelectAll"),
+  monthlyFlowChartDeselectAll: document.getElementById("monthlyFlowChartDeselectAll"),
+  monthlyFlowChartPlot: document.getElementById("monthlyFlowChartPlot"),
+  monthlyFlowChartSvg: document.getElementById("monthlyFlowChartSvg"),
+  monthlyFlowChartTooltip: document.getElementById("monthlyFlowChartTooltip"),
   shiftListMonth: document.getElementById("shiftListMonth"),
   operatorTableBodyMonth: document.getElementById("operatorTableBodyMonth")
 };
@@ -194,6 +207,12 @@ function bindEvents() {
   DOM.cancelRecordEditButton.addEventListener("click", () => DOM.recordEditor.close());
   DOM.refreshDashboardButton.addEventListener("click", loadDashboard);
   DOM.monthSelector.addEventListener("change", loadDashboard);
+  DOM.monthlyFlowChartYear.addEventListener("change", drawMonthlyFlowChart);
+  DOM.monthlyFlowChartActivityOptions.addEventListener("change", onMonthlyFlowActivityChange);
+  DOM.monthlyFlowChartSelectAll.addEventListener("click", () => setAllMonthlyFlowActivities(true));
+  DOM.monthlyFlowChartDeselectAll.addEventListener("click", () => setAllMonthlyFlowActivities(false));
+  window.addEventListener("resize", drawMonthlyFlowChart);
+  document.addEventListener("click", onMonthlyFlowChartOutsideClick);
 }
 
 function getCurrentMonthKey() {
@@ -718,13 +737,13 @@ async function loadDashboard() {
 
     APP_STATE.dashboard.monthKey = data.monthKey || "";
     APP_STATE.dashboard.totalMonth = data.totalMonth || 0;
-    APP_STATE.dashboard.byActivityMonth = data.byActivityMonth || {};
     APP_STATE.dashboard.byShiftMonth = data.byShiftMonth || {};
     APP_STATE.dashboard.byOperatorMonth = data.byOperatorMonth || [];
     APP_STATE.dashboard.totalDay = data.totalDay || 0;
     APP_STATE.dashboard.balanceDay = data.balanceDay || 0;
     APP_STATE.dashboard.monthlyReception = data.monthlyReception || 0;
     APP_STATE.dashboard.monthlyDelivered = data.monthlyDelivered || 0;
+    APP_STATE.dashboard.monthlyFlowByMonth = data.monthlyFlowByMonth || [];
 
     renderDashboard();
   } catch (error) {
@@ -747,14 +766,348 @@ function renderDashboard() {
   DOM.kpiFlowMonthLabel.textContent = APP_STATE.dashboard.monthKey
     ? `Periodo ${APP_STATE.dashboard.monthKey}`
     : "Periodo --";
+  renderMonthlyFlowChart();
 
   if (DOM.monthSelector.value !== APP_STATE.dashboard.monthKey && APP_STATE.dashboard.monthKey) {
     DOM.monthSelector.value = APP_STATE.dashboard.monthKey;
   }
 
-  renderStatList(DOM.activityListMonth, APP_STATE.activities, APP_STATE.dashboard.byActivityMonth);
   renderStatList(DOM.shiftListMonth, APP_STATE.shiftOptions, APP_STATE.dashboard.byShiftMonth);
   renderOperatorTable(DOM.operatorTableBodyMonth, APP_STATE.dashboard.byOperatorMonth);
+}
+
+function renderMonthlyFlowChart() {
+  const historicalData = APP_STATE.dashboard.monthlyFlowByMonth || [];
+  const activityNames = getMonthlyFlowActivityNames(historicalData);
+  const currentYear = formatDateKey(new Date()).slice(0, 4);
+  const availableYears = [...new Set(historicalData.map((month) => String(month.monthKey).slice(0, 4)))];
+  if (!availableYears.includes(currentYear)) {
+    availableYears.push(currentYear);
+  }
+  availableYears.sort((yearA, yearB) => Number(yearB) - Number(yearA));
+
+  const previousYear = DOM.monthlyFlowChartYear.value || APP_STATE.monthlyFlowChartYear;
+  DOM.monthlyFlowChartYear.replaceChildren();
+  availableYears.forEach((year) => {
+    const option = document.createElement("option");
+    option.value = year;
+    option.textContent = year;
+    DOM.monthlyFlowChartYear.appendChild(option);
+  });
+  APP_STATE.monthlyFlowChartYear = availableYears.includes(previousYear) ? previousYear : availableYears[0];
+  DOM.monthlyFlowChartYear.value = APP_STATE.monthlyFlowChartYear;
+
+  if (APP_STATE.dashboard.monthlyFlowSelectedActivities === null) {
+    APP_STATE.dashboard.monthlyFlowSelectedActivities = new Set(
+      activityNames.filter(isDefaultMonthlyFlowActivity).map(getMonthlyFlowActivityKey)
+    );
+  } else {
+    const availableActivityKeys = new Set(activityNames.map(getMonthlyFlowActivityKey));
+    APP_STATE.dashboard.monthlyFlowSelectedActivities = new Set(
+      [...APP_STATE.dashboard.monthlyFlowSelectedActivities].filter((key) => availableActivityKeys.has(key))
+    );
+  }
+
+  renderMonthlyFlowActivityOptions(activityNames);
+  drawMonthlyFlowChart();
+}
+
+function getMonthlyFlowActivityNames(historicalData) {
+  const candidates = [...new Set([
+    ...historicalData.flatMap((month) => Object.keys(month.activities || {})),
+    ...APP_STATE.activities
+  ].filter(Boolean))];
+  const seenKeys = new Set();
+  return candidates.filter((activity) => {
+    const key = getMonthlyFlowActivityKey(activity);
+    if (seenKeys.has(key)) {
+      return false;
+    }
+    seenKeys.add(key);
+    return true;
+  }).sort((activityA, activityB) => getMonthlyFlowActivityLabel(activityA)
+    .localeCompare(getMonthlyFlowActivityLabel(activityB), "es", { numeric: true, sensitivity: "base" }));
+}
+
+function isDefaultMonthlyFlowActivity(activity) {
+  const normalized = normalizeMonthlyFlowActivity(activity);
+  return normalized.startsWith("01 recepcion de cilindros")
+    || normalized.startsWith("11 entrega de cilindros")
+    || normalized === "05 ph"
+    || normalized === "prueba hidrostatica (ph)";
+}
+
+function normalizeMonthlyFlowActivity(activity) {
+  return String(activity || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getMonthlyFlowActivityLabel(activity) {
+  return activity;
+}
+
+function getMonthlyFlowActivityKey(activity) {
+  const normalized = normalizeMonthlyFlowActivity(activity);
+  if (normalized.startsWith("01 recepcion de cilindros")) {
+    return "01 recepcion de cilindros";
+  }
+  if (normalized.startsWith("11 entrega de cilindros")) {
+    return "11 entrega de cilindros";
+  }
+  if (normalized === "05 ph" || normalized === "prueba hidrostatica (ph)") {
+    return "05 ph";
+  }
+  return normalized;
+}
+
+function getMonthlyFlowActivityColor(activity, activityNames) {
+  const colors = ["#0b6e4f", "#2f6fed", "#d97706", "#be123c", "#0891b2", "#65a30d", "#475569", "#c2410c", "#7c3aed", "#0f766e", "#ca8a04", "#0369a1", "#a21caf", "#be185d", "#15803d", "#b91c1c", "#4d7c0f", "#155e75", "#b45309", "#4338ca", "#9f1239", "#166534", "#0e7490", "#9a3412"];
+  const index = Math.max(0, activityNames.indexOf(activity));
+  return colors[index % colors.length];
+}
+
+function renderMonthlyFlowActivityOptions(activityNames) {
+  DOM.monthlyFlowChartActivityOptions.replaceChildren();
+  activityNames.forEach((activity) => {
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.dataset.activity = activity;
+    checkbox.dataset.activityKey = getMonthlyFlowActivityKey(activity);
+    checkbox.checked = APP_STATE.dashboard.monthlyFlowSelectedActivities.has(checkbox.dataset.activityKey);
+
+    const swatch = document.createElement("span");
+    swatch.className = "monthly-flow-chart-activity-swatch";
+    swatch.style.backgroundColor = getMonthlyFlowActivityColor(activity, activityNames);
+    swatch.setAttribute("aria-hidden", "true");
+
+    const text = document.createElement("span");
+    text.textContent = getMonthlyFlowActivityLabel(activity);
+    label.append(checkbox, swatch, text);
+    DOM.monthlyFlowChartActivityOptions.appendChild(label);
+  });
+  updateMonthlyFlowActivityCount();
+}
+
+function onMonthlyFlowActivityChange(event) {
+  const checkbox = event.target.closest("input[type='checkbox'][data-activity]");
+  if (!checkbox) {
+    return;
+  }
+  if (checkbox.checked) {
+    APP_STATE.dashboard.monthlyFlowSelectedActivities.add(checkbox.dataset.activityKey);
+  } else {
+    APP_STATE.dashboard.monthlyFlowSelectedActivities.delete(checkbox.dataset.activityKey);
+  }
+  updateMonthlyFlowActivityCount();
+  drawMonthlyFlowChart();
+}
+
+function setAllMonthlyFlowActivities(selected) {
+  const checkboxes = [...DOM.monthlyFlowChartActivityOptions.querySelectorAll("input[data-activity]")];
+  APP_STATE.dashboard.monthlyFlowSelectedActivities = new Set(
+    selected ? checkboxes.map((checkbox) => checkbox.dataset.activityKey) : []
+  );
+  checkboxes.forEach((checkbox) => {
+    checkbox.checked = selected;
+  });
+  updateMonthlyFlowActivityCount();
+  drawMonthlyFlowChart();
+}
+
+function updateMonthlyFlowActivityCount() {
+  const count = APP_STATE.dashboard.monthlyFlowSelectedActivities.size;
+  DOM.monthlyFlowChartSelectedCount.textContent = `${count} ${count === 1 ? "seleccionada" : "seleccionadas"}`;
+}
+
+function getMonthlyFlowActivityValue(month, activity) {
+  const activityKey = getMonthlyFlowActivityKey(activity);
+  const matchingActivities = Object.entries(month.activities || {})
+    .filter(([name]) => getMonthlyFlowActivityKey(name) === activityKey);
+  if (matchingActivities.length > 0) {
+    return matchingActivities.reduce((total, [, value]) => total + (Number(value) || 0), 0);
+  }
+  const normalized = normalizeMonthlyFlowActivity(activity);
+  if (normalized.startsWith("01 recepcion de cilindros")) {
+    return Number(month.reception) || 0;
+  }
+  if (normalized.startsWith("11 entrega de cilindros")) {
+    return Number(month.delivered) || 0;
+  }
+  return 0;
+}
+
+function drawMonthlyFlowChart() {
+  const historicalData = APP_STATE.dashboard.monthlyFlowByMonth || [];
+
+  const year = DOM.monthlyFlowChartYear.value || APP_STATE.monthlyFlowChartYear;
+  APP_STATE.monthlyFlowChartYear = year;
+  const monthMap = new Map(historicalData.map((item) => [item.monthKey, item]));
+  const months = Array.from({ length: 12 }, (_, index) => {
+    const monthKey = `${year}-${String(index + 1).padStart(2, "0")}`;
+    const values = monthMap.get(monthKey) || {};
+    return {
+      monthKey,
+      activities: values.activities || {},
+      reception: Number(values.reception) || 0,
+      delivered: Number(values.delivered) || 0
+    };
+  });
+  const allActivityNames = getMonthlyFlowActivityNames(historicalData);
+  const selectedActivityKeys = [...APP_STATE.dashboard.monthlyFlowSelectedActivities];
+  const selectedActivities = selectedActivityKeys
+    .map((key) => allActivityNames.find((activity) => getMonthlyFlowActivityKey(activity) === key))
+    .filter(Boolean);
+  const maxValue = Math.max(0, ...months.flatMap((month) => selectedActivities.map((activity) => getMonthlyFlowActivityValue(month, activity))));
+  const compactFormatter = new Intl.NumberFormat("es-MX", { notation: "compact", maximumFractionDigits: 1 });
+  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const isMobile = DOM.monthlyFlowChartPlot.clientWidth < 440;
+  const baseWidth = DOM.monthlyFlowChartPlot.clientWidth || 320;
+  const minimumGroupWidth = selectedActivities.length > 5 ? Math.min(110, 14 + selectedActivities.length * 3.6) : 0;
+  const width = Math.max(baseWidth, (minimumGroupWidth * 12) + (isMobile ? 40 : 54));
+  const height = width < 440 ? 236 : 272;
+  const plotLeft = isMobile ? 30 : 42;
+  const plotRight = 10;
+  const plotTop = 12;
+  const plotBottom = height - 38;
+  const plotHeight = plotBottom - plotTop;
+  const plotWidth = width - plotLeft - plotRight;
+  const groupWidth = plotWidth / 12;
+  const activityGap = Math.min(3, groupWidth * 0.04);
+  const barWidth = selectedActivities.length ? Math.min(18, Math.max(1, ((groupWidth - 4) / selectedActivities.length) * 0.72)) : 0;
+
+  DOM.monthlyFlowChartTooltip.hidden = true;
+  DOM.monthlyFlowChartSvg.style.width = `${width}px`;
+  DOM.monthlyFlowChartSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  DOM.monthlyFlowChartSvg.setAttribute("aria-label", `Actividades seleccionadas de enero a diciembre de ${year}`);
+  DOM.monthlyFlowChartSvg.replaceChildren();
+
+  for (let tick = 0; tick <= 4; tick += 1) {
+    const fraction = tick / 4;
+    const y = plotBottom - fraction * plotHeight;
+    const tickValue = maxValue * fraction;
+    const line = createMonthlyFlowSvgElement("line", {
+      x1: plotLeft,
+      x2: width - plotRight,
+      y1: y,
+      y2: y,
+      class: "monthly-flow-chart-gridline"
+    });
+    const label = createMonthlyFlowSvgElement("text", {
+      x: plotLeft - 7,
+      y: y + 4,
+      class: "monthly-flow-chart-axis-label",
+      "text-anchor": "end"
+    }, compactFormatter.format(tickValue));
+    DOM.monthlyFlowChartSvg.append(line, label);
+  }
+
+  months.forEach((month, index) => {
+    const center = plotLeft + groupWidth * (index + 0.5);
+    const barsWidth = selectedActivities.length * barWidth + Math.max(0, selectedActivities.length - 1) * activityGap;
+    const firstBarX = center - barsWidth / 2;
+    selectedActivities.forEach((activity, activityIndex) => {
+      const value = getMonthlyFlowActivityValue(month, activity);
+      const label = getMonthlyFlowActivityLabel(activity);
+      const color = getMonthlyFlowActivityColor(activity, allActivityNames);
+      const x = firstBarX + activityIndex * (barWidth + activityGap);
+      appendMonthlyFlowBar(month, monthNames[index], value, label, color, x, barWidth, maxValue, plotBottom, plotHeight);
+    });
+
+    const monthLabel = createMonthlyFlowSvgElement("text", {
+      x: center,
+      y: height - 10,
+      class: "monthly-flow-chart-month-label",
+      "text-anchor": "middle"
+    }, monthNames[index]);
+    DOM.monthlyFlowChartSvg.appendChild(monthLabel);
+  });
+
+  if (selectedActivities.length === 0) {
+    const emptyLabel = createMonthlyFlowSvgElement("text", {
+      x: plotLeft + plotWidth / 2,
+      y: plotTop + plotHeight / 2,
+      class: "monthly-flow-chart-empty-label",
+      "text-anchor": "middle"
+    }, "Selecciona una actividad para mostrarla");
+    DOM.monthlyFlowChartSvg.appendChild(emptyLabel);
+  }
+}
+
+function createMonthlyFlowSvgElement(name, attributes, text) {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", name);
+  Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+  return element;
+}
+
+function appendMonthlyFlowBar(month, monthName, value, seriesLabel, color, x, width, maxValue, plotBottom, plotHeight) {
+  const barHeight = maxValue ? (value / maxValue) * plotHeight : 0;
+  const minimumHitHeight = 10;
+  const rectHeight = value > 0 ? Math.max(barHeight, 1) : minimumHitHeight;
+  const bar = createMonthlyFlowSvgElement("rect", {
+    x,
+    y: plotBottom - rectHeight,
+    width,
+    height: rectHeight,
+    rx: 2,
+    class: `monthly-flow-chart-bar ${value > 0 ? "" : "monthly-flow-chart-zero-bar"}`,
+    tabindex: value > 0 ? 0 : -1,
+    role: "img",
+    "aria-label": `${monthName}: ${seriesLabel}, ${formatQuantity(value)} cilindros`
+  });
+  bar.style.fill = value > 0 ? color : "transparent";
+  const tooltipText = `${monthName}: ${seriesLabel} · ${formatQuantity(value)} cilindros`;
+  const title = createMonthlyFlowSvgElement("title", {}, tooltipText);
+  bar.appendChild(title);
+  bar.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse") {
+      showMonthlyFlowChartTooltip(bar, tooltipText, event);
+    }
+  });
+  bar.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "mouse") {
+      DOM.monthlyFlowChartTooltip.hidden = true;
+    }
+  });
+  bar.addEventListener("focus", () => showMonthlyFlowChartTooltip(bar, tooltipText));
+  bar.addEventListener("blur", () => {
+    DOM.monthlyFlowChartTooltip.hidden = true;
+  });
+  bar.addEventListener("click", (event) => showMonthlyFlowChartTooltip(bar, tooltipText, event));
+  DOM.monthlyFlowChartSvg.appendChild(bar);
+}
+
+function showMonthlyFlowChartTooltip(bar, text, event) {
+  const tooltip = DOM.monthlyFlowChartTooltip;
+  const plotRect = DOM.monthlyFlowChartPlot.getBoundingClientRect();
+  const barRect = bar.getBoundingClientRect();
+  tooltip.textContent = text;
+  tooltip.hidden = false;
+
+  const pointerX = event && event.clientX ? event.clientX - plotRect.left : barRect.left - plotRect.left + barRect.width / 2;
+  const pointerY = event && event.clientY ? event.clientY - plotRect.top : barRect.top - plotRect.top;
+  const left = Math.max(6, Math.min(pointerX + 8, plotRect.width - tooltip.offsetWidth - 6));
+  const top = pointerY - tooltip.offsetHeight - 8 >= 6
+    ? pointerY - tooltip.offsetHeight - 8
+    : Math.min(plotRect.height - tooltip.offsetHeight - 6, barRect.bottom - plotRect.top + 8);
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${Math.max(6, top)}px`;
+}
+
+function onMonthlyFlowChartOutsideClick(event) {
+  if (!event.target.closest(".monthly-flow-chart-plot")) {
+    DOM.monthlyFlowChartTooltip.hidden = true;
+  }
+  if (!event.target.closest("#monthlyFlowChartActivityFilter")) {
+    DOM.monthlyFlowChartActivityFilter.open = false;
+  }
 }
 
 function renderStatList(targetElement, keys, valuesMap) {

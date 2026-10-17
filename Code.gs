@@ -504,6 +504,7 @@ function getDailyDashboard(requestedMonthKey) {
   const byOperatorMap = {};
   const byOperatorMonthMap = {};
   const netByDate = {};
+  const monthlyFlowMap = {};
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.production);
   const lastRow = sheet.getLastRow();
@@ -517,6 +518,7 @@ function getDailyDashboard(requestedMonthKey) {
       balanceDay: inventoryBase,
       monthlyReception: 0,
       monthlyDelivered: 0,
+      monthlyFlowByMonth: [],
       byActivityMonth: byActivityMonth,
       byShiftMonth: byShiftMonth,
       byOperatorMonth: [],
@@ -551,6 +553,20 @@ function getDailyDashboard(requestedMonthKey) {
         netByDate[rowDateKey] += qty;
       } else if (normalizedActivity === '11 entrega de cilindros (cilindros terminados)') {
         netByDate[rowDateKey] -= qty;
+      }
+
+      const rowMonthKey = rowDateKey.slice(0, 7);
+      if (!monthlyFlowMap[rowMonthKey]) {
+        monthlyFlowMap[rowMonthKey] = { monthKey: rowMonthKey, reception: 0, delivered: 0, activities: {} };
+      }
+      if (!Object.prototype.hasOwnProperty.call(monthlyFlowMap[rowMonthKey].activities, activity)) {
+        monthlyFlowMap[rowMonthKey].activities[activity] = 0;
+      }
+      monthlyFlowMap[rowMonthKey].activities[activity] += qty;
+      if (normalizedActivity === '01 recepcion de cilindros') {
+        monthlyFlowMap[rowMonthKey].reception += qty;
+      } else if (normalizedActivity === '11 entrega de cilindros (cilindros terminados)') {
+        monthlyFlowMap[rowMonthKey].delivered += qty;
       }
     }
 
@@ -646,6 +662,9 @@ function getDailyDashboard(requestedMonthKey) {
     balanceDay: balanceDay,
     monthlyReception: monthlyReception,
     monthlyDelivered: monthlyDelivered,
+    monthlyFlowByMonth: Object.keys(monthlyFlowMap).sort().map(function (key) {
+      return monthlyFlowMap[key];
+    }),
     byActivityMonth: byActivityMonth,
     byShiftMonth: byShiftMonth,
     byOperatorMonth: byOperatorMonth,
