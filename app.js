@@ -892,12 +892,18 @@ async function onSaveRecordChanges(event) {
     setRecordEditorMessage("La cantidad debe ser un numero entero positivo.", "error");
     return;
   }
+  const recordId = APP_STATE.consultation.editingRecordId;
+  const record = APP_STATE.consultation.records.find((item) => String(item.id) === String(recordId));
+  if (!record) {
+    setRecordEditorMessage("El registro ya no esta en la consulta actual. Cierra y vuelve a buscar.", "error");
+    return;
+  }
 
   DOM.saveRecordChangesButton.disabled = true;
   setRecordEditorMessage("Guardando cambios...", "");
   try {
     await callApi("updateProductionRecord", {
-      id: APP_STATE.consultation.editingRecordId,
+      id: recordId,
       date: parseMexicoDate(DOM.consultationStartDate.value),
       operator: DOM.recordEditorOperator.value,
       shift: DOM.recordEditorShift.value,
@@ -906,8 +912,17 @@ async function onSaveRecordChanges(event) {
       observations: DOM.recordEditorObservations.value.trim(),
       captureUser: DOM.recordEditorCaptureUser.value
     });
+    Object.assign(record, {
+      operator: DOM.recordEditorOperator.value,
+      shift: DOM.recordEditorShift.value,
+      activity: DOM.recordEditorActivity.value,
+      quantity,
+      observations: DOM.recordEditorObservations.value.trim(),
+      captureUser: DOM.recordEditorCaptureUser.value
+    });
+    renderConsultation(true);
     DOM.recordEditor.close();
-    await loadConsultation("Registro actualizado correctamente.");
+    setConsultationMessage("Registro actualizado correctamente.", "success");
   } catch (error) {
     console.error(error);
     setRecordEditorMessage(error.message || "No se pudo actualizar el registro.", "error");
@@ -928,7 +943,10 @@ async function deleteConsultationRecord(record) {
       id: record.id,
       date: parseMexicoDate(DOM.consultationStartDate.value)
     });
-    await loadConsultation("Registro eliminado correctamente.");
+    APP_STATE.consultation.records = APP_STATE.consultation.records
+      .filter((item) => String(item.id) !== String(record.id));
+    renderConsultation(true);
+    setConsultationMessage("Registro eliminado correctamente.", "success");
   } catch (error) {
     console.error(error);
     setConsultationMessage(error.message || "No se pudo eliminar el registro.", "error");
