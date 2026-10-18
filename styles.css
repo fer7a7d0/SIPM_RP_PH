@@ -369,44 +369,23 @@ textarea:focus {
   padding-right: 40px;
 }
 
-.date-part-fields {
-  display: grid;
-  grid-template-columns: minmax(20px, 1fr) 5px minmax(20px, 1fr) 5px minmax(40px, 1.5fr);
-  align-items: center;
-  gap: 2px;
+.date-display-input {
   width: 100%;
   min-width: 0;
   max-width: 100%;
   min-height: 44px;
-  padding: 4px 38px 4px 6px;
+  padding: 9px 40px 9px 11px;
   border: 1px solid #bcccdc;
   border-radius: var(--radius-md);
   color: var(--color-text);
   background: #f8fafc;
+  font: inherit;
+  cursor: pointer;
 }
 
-.date-part-fields:focus-within {
+.date-display-input:focus {
   border-color: var(--color-primary);
   outline: 2px solid rgba(11, 110, 79, 0.3);
-}
-
-.date-part-fields input {
-  width: 100%;
-  min-width: 0;
-  height: 34px;
-  padding: 0 1px;
-  border: 0;
-  border-radius: 0;
-  outline: 0;
-  color: inherit;
-  background: transparent;
-  font-size: 16px;
-  text-align: center;
-}
-
-.date-part-separator {
-  color: var(--color-muted);
-  text-align: center;
 }
 
 .record-editor-date-picker .month-filter-input {
@@ -1088,7 +1067,7 @@ thead th {
     color: #e5edf7;
   }
 
-  .date-part-fields {
+  .date-display-input {
     border-color: #2a3d5f;
     color: #e5edf7;
     background: #111c2e;
@@ -1351,7 +1330,20 @@ thead th {
 
 @media (max-width: 600px) {
   .consultation-controls {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .consultation-date-filter,
+  .consultation-controls .date-picker-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .consultation-controls .date-display-input {
+    min-width: 0;
+    padding: 8px 34px 8px 6px;
+    font-size: 0.8rem;
   }
 
   main {

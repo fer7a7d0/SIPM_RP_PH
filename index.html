@@ -72,13 +72,7 @@
                 <label>
                   Fecha
                   <div class="date-picker-control production-date-picker">
-                    <div class="date-part-fields" role="group" aria-label="Fecha de producción">
-                      <input id="productionDateDay" class="date-part-input date-part-day" type="text" inputmode="numeric" maxlength="2" placeholder="DD" aria-label="Día de producción" />
-                      <span class="date-part-separator" aria-hidden="true">/</span>
-                      <input id="productionDateMonth" class="date-part-input date-part-month" type="text" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Mes de producción" />
-                      <span class="date-part-separator" aria-hidden="true">/</span>
-                      <input id="productionDateYear" class="date-part-input date-part-year" type="text" inputmode="numeric" maxlength="4" placeholder="AAAA" aria-label="Año de producción" />
-                    </div>
+                    <input id="productionDateDisplay" class="date-display-input" type="text" readonly placeholder="dd/mm/aaaa" aria-label="Elegir fecha de producción" />
                     <input id="productionDate" type="hidden" aria-hidden="true" />
                     <button id="productionDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha de producción" title="Elegir fecha" aria-expanded="false">
                       <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -260,15 +254,9 @@
               <p class="panel-note">Filtra los registros de producción por fecha y consulta su información.</p>
               <div class="consultation-controls">
                 <div class="consultation-date-filter">
-                  <label for="consultationStartDateDay">Desde</label>
+                  <label for="consultationStartDateDisplay">Desde</label>
                   <div class="date-picker-control">
-                    <div class="date-part-fields" role="group" aria-label="Fecha inicial">
-                      <input id="consultationStartDateDay" class="date-part-input date-part-day" type="text" inputmode="numeric" maxlength="2" placeholder="DD" aria-label="Día inicial" />
-                      <span class="date-part-separator" aria-hidden="true">/</span>
-                      <input id="consultationStartDateMonth" class="date-part-input date-part-month" type="text" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Mes inicial" />
-                      <span class="date-part-separator" aria-hidden="true">/</span>
-                      <input id="consultationStartDateYear" class="date-part-input date-part-year" type="text" inputmode="numeric" maxlength="4" placeholder="AAAA" aria-label="Año inicial" />
-                    </div>
+                    <input id="consultationStartDateDisplay" class="date-display-input" type="text" readonly placeholder="dd/mm/aaaa" aria-label="Elegir fecha inicial" />
                     <input id="consultationStartDate" type="hidden" aria-hidden="true" />
                     <button id="consultationStartDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha inicial" title="Elegir fecha">
                       <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -288,15 +276,9 @@
                   </div>
                 </div>
                 <div class="consultation-date-filter">
-                  <label for="consultationEndDateDay">Hasta (opcional)</label>
+                  <label for="consultationEndDateDisplay">Hasta (opcional)</label>
                   <div class="date-picker-control">
-                    <div class="date-part-fields" role="group" aria-label="Fecha final opcional">
-                      <input id="consultationEndDateDay" class="date-part-input date-part-day" type="text" inputmode="numeric" maxlength="2" placeholder="DD" aria-label="Día final" />
-                      <span class="date-part-separator" aria-hidden="true">/</span>
-                      <input id="consultationEndDateMonth" class="date-part-input date-part-month" type="text" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Mes final" />
-                      <span class="date-part-separator" aria-hidden="true">/</span>
-                      <input id="consultationEndDateYear" class="date-part-input date-part-year" type="text" inputmode="numeric" maxlength="4" placeholder="AAAA" aria-label="Año final" />
-                    </div>
+                    <input id="consultationEndDateDisplay" class="date-display-input" type="text" readonly placeholder="dd/mm/aaaa" aria-label="Elegir fecha final" />
                     <input id="consultationEndDate" type="hidden" aria-hidden="true" />
                     <button id="consultationEndDatePickerButton" class="date-picker-button" type="button" aria-label="Elegir fecha final" title="Elegir fecha">
                       <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
