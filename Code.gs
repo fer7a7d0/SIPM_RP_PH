@@ -556,7 +556,7 @@ function getDailyDashboard(requestedMonthKey) {
       const normalizedActivity = normalizeActivityName(activity);
       if (normalizedActivity === '01 recepcion de cilindros') {
         netByDate[rowDateKey] += qty;
-      } else if (normalizedActivity === '11 entrega de cilindros (cilindros terminados)') {
+      } else if (normalizedActivity.indexOf('11 entrega de cilindros') === 0) {
         netByDate[rowDateKey] -= qty;
       }
 
@@ -570,7 +570,7 @@ function getDailyDashboard(requestedMonthKey) {
       monthlyFlowMap[rowMonthKey].activities[activity] += qty;
       if (normalizedActivity === '01 recepcion de cilindros') {
         monthlyFlowMap[rowMonthKey].reception += qty;
-      } else if (normalizedActivity === '11 entrega de cilindros (cilindros terminados)') {
+      } else if (normalizedActivity.indexOf('11 entrega de cilindros') === 0) {
         monthlyFlowMap[rowMonthKey].delivered += qty;
       }
     }
@@ -587,7 +587,7 @@ function getDailyDashboard(requestedMonthKey) {
 
       if (normalizedMonthActivity === '01 recepcion de cilindros') {
         monthlyReception += monthQty;
-      } else if (normalizedMonthActivity === '11 entrega de cilindros (cilindros terminados)') {
+      } else if (normalizedMonthActivity.indexOf('11 entrega de cilindros') === 0) {
         monthlyDelivered += monthQty;
       } else if (normalizedMonthActivity === '05 ph' || normalizedMonthActivity === 'prueba hidrostatica (ph)') {
         monthlyPH += monthQty;

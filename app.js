@@ -11,7 +11,7 @@
 */
 
 // Reemplazar con la URL del despliegue de Apps Script (Web App).
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbydkmcacdDu1WuB4xTiEQPbr7qU5XJyWunrXHv6c46EUaug4XQ0wAEQrq64wuVIr3rG/exec";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbxjNEChoA7H0_U4YH1Iow-YMF1wFtSrkhJookVm-aFOrk0Y94FMQDvaZ3jOTpSSsLm9/exec";
 const APP_TIME_ZONE = "America/Monterrey";
 const NUMBER_FORMATTER = new Intl.NumberFormat("es-MX");
 
