@@ -963,7 +963,7 @@ function drawMonthlyFlowChart() {
     };
   });
   const allActivityNames = getMonthlyFlowActivityNames(historicalData);
-  const selectedActivityKeys = [...APP_STATE.dashboard.monthlyFlowSelectedActivities];
+  const selectedActivityKeys = [...(APP_STATE.dashboard.monthlyFlowSelectedActivities || [])];
   const selectedActivities = selectedActivityKeys
     .map((key) => allActivityNames.find((activity) => getMonthlyFlowActivityKey(activity) === key))
     .filter(Boolean);
@@ -1073,9 +1073,8 @@ function appendMonthlyFlowBar(month, monthName, value, seriesLabel, color, x, wi
     "aria-label": `${monthName}: ${seriesLabel}, ${formatQuantity(value)} cilindros`
   });
   bar.style.fill = value > 0 ? color : "transparent";
-  const tooltipText = `${monthName}: ${seriesLabel} · ${formatQuantity(value)} cilindros`;
-  const title = createMonthlyFlowSvgElement("title", {}, tooltipText);
-  bar.appendChild(title);
+  const tooltipLabel = getMonthlyFlowActivityTooltipLabel(seriesLabel);
+  const tooltipText = `${tooltipLabel}: ${formatQuantity(value)} cilindros`;
   bar.addEventListener("pointerenter", (event) => {
     if (event.pointerType === "mouse") {
       showMonthlyFlowChartTooltip(bar, tooltipText, event);
@@ -1092,6 +1091,20 @@ function appendMonthlyFlowBar(month, monthName, value, seriesLabel, color, x, wi
   });
   bar.addEventListener("click", (event) => showMonthlyFlowChartTooltip(bar, tooltipText, event));
   DOM.monthlyFlowChartSvg.appendChild(bar);
+}
+
+function getMonthlyFlowActivityTooltipLabel(activity) {
+  const normalized = normalizeMonthlyFlowActivity(activity);
+  if (normalized.startsWith("01 recepcion de cilindros")) {
+    return "Recepción";
+  }
+  if (normalized.startsWith("11 entrega de cilindros")) {
+    return "Entregados";
+  }
+  if (normalized === "05 ph" || normalized === "prueba hidrostatica (ph)") {
+    return "PH";
+  }
+  return activity;
 }
 
 function showMonthlyFlowChartTooltip(bar, text, event) {
