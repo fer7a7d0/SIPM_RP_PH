@@ -161,9 +161,9 @@
 
             <div class="kpi-grid">
               <div class="kpi-card highlight">
-                <p>Produccion del Dia</p>
-                <h3 id="kpiTotalDay">0</h3>
-                <small>Actividades realizadas</small>
+                <p>Promedio diario de actividades</p>
+                <h3 id="kpiAverageDailyMonth">0</h3>
+                <small id="kpiAverageDailyMonthLabel">0 días con registros</small>
               </div>
               <div class="kpi-card balance-highlight">
                 <p>Backlog</p>
@@ -173,7 +173,6 @@
               <div class="kpi-card month-highlight">
                 <p>Actividades realizadas del Mes</p>
                 <h3 id="kpiTotalMonth">0</h3>
-                <small id="kpiMonthLabel">Periodo --</small>
               </div>
               <div class="kpi-card flow-highlight">
                 <p>Flujo Mensual de Cilindros</p>
@@ -185,7 +184,10 @@
                   <span>Entregados</span>
                   <strong id="kpiMonthDelivered">0</strong>
                 </div>
-                <small id="kpiFlowMonthLabel">Periodo --</small>
+                <div class="kpi-dual-row">
+                  <span>PH</span>
+                  <strong id="kpiMonthPH">0</strong>
+                </div>
               </div>
             </div>
 
@@ -222,7 +224,6 @@
               <section class="kpi-card balance-highlight">
                 <p>Produccion por Turno (Mes)</p>
                 <ul id="shiftListMonth" class="stat-list kpi-stat-list"></ul>
-                <small id="kpiShiftMonthLabel">Periodo --</small>
               </section>
               <section class="kpi-card month-highlight">
                 <p>Produccion por Operador (Mes)</p>
@@ -237,7 +238,6 @@
                     <tbody id="operatorTableBodyMonth"></tbody>
                   </table>
                 </div>
-                <small id="kpiOperatorMonthLabel">Periodo --</small>
               </section>
             </div>
 

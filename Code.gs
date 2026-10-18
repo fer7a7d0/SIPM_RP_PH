@@ -515,9 +515,12 @@ function getDailyDashboard(requestedMonthKey) {
       monthKey: monthKey,
       totalMonth: 0,
       totalDay: 0,
+      averageDailyMonth: 0,
+      monthlyRecordDays: 0,
       balanceDay: inventoryBase,
       monthlyReception: 0,
       monthlyDelivered: 0,
+      monthlyPH: 0,
       monthlyFlowByMonth: [],
       byActivityMonth: byActivityMonth,
       byShiftMonth: byShiftMonth,
@@ -533,6 +536,8 @@ function getDailyDashboard(requestedMonthKey) {
   let totalDay = 0;
   let monthlyReception = 0;
   let monthlyDelivered = 0;
+  let monthlyPH = 0;
+  const monthlyRecordDateKeys = {};
 
   data.forEach(function (row) {
     if (String(row[12] || '').toUpperCase() === 'ELIMINADO') {
@@ -578,11 +583,14 @@ function getDailyDashboard(requestedMonthKey) {
       const normalizedMonthActivity = normalizeActivityName(monthActivity);
 
       totalMonth += monthQty;
+      monthlyRecordDateKeys[rowDateKey] = true;
 
       if (normalizedMonthActivity === '01 recepcion de cilindros') {
         monthlyReception += monthQty;
       } else if (normalizedMonthActivity === '11 entrega de cilindros (cilindros terminados)') {
         monthlyDelivered += monthQty;
+      } else if (normalizedMonthActivity === '05 ph' || normalizedMonthActivity === 'prueba hidrostatica (ph)') {
+        monthlyPH += monthQty;
       }
 
       if (byActivityMonth[monthActivity] !== undefined) {
@@ -654,14 +662,20 @@ function getDailyDashboard(requestedMonthKey) {
       return b.total - a.total;
     });
 
+  const monthlyRecordDays = Object.keys(monthlyRecordDateKeys).length;
+  const averageDailyMonth = monthlyRecordDays ? totalMonth / monthlyRecordDays : 0;
+
   return {
     date: today,
     monthKey: monthKey,
     totalMonth: totalMonth,
     totalDay: totalDay,
+    averageDailyMonth: averageDailyMonth,
+    monthlyRecordDays: monthlyRecordDays,
     balanceDay: balanceDay,
     monthlyReception: monthlyReception,
     monthlyDelivered: monthlyDelivered,
+    monthlyPH: monthlyPH,
     monthlyFlowByMonth: Object.keys(monthlyFlowMap).sort().map(function (key) {
       return monthlyFlowMap[key];
     }),

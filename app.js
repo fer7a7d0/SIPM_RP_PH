@@ -11,7 +11,7 @@
 */
 
 // Reemplazar con la URL del despliegue de Apps Script (Web App).
-const API_BASE_URL = "https://script.google.com/macros/s/AKfycbzzuMDGTYLJrKE8XyrG-W-IelEPnxhFwMlA3r83zclqfnp7Cdc2orqBIqSW04H1FBVF/exec";
+const API_BASE_URL = "https://script.google.com/macros/s/AKfycbydkmcacdDu1WuB4xTiEQPbr7qU5XJyWunrXHv6c46EUaug4XQ0wAEQrq64wuVIr3rG/exec";
 const APP_TIME_ZONE = "America/Monterrey";
 const NUMBER_FORMATTER = new Intl.NumberFormat("es-MX");
 
@@ -30,10 +30,12 @@ const APP_STATE = {
   dashboard: {
     monthKey: "",
     totalMonth: 0,
-    totalDay: 0,
+    averageDailyMonth: 0,
+    monthlyRecordDays: 0,
     balanceDay: 0,
     monthlyReception: 0,
     monthlyDelivered: 0,
+    monthlyPH: 0,
     monthlyFlowByMonth: [],
     monthlyFlowSelectedActivities: null,
     byShiftMonth: {},
@@ -121,15 +123,13 @@ const DOM = {
   consultaScreen: document.getElementById("consultaScreen"),
   monthSelector: document.getElementById("monthSelector"),
   refreshDashboardButton: document.getElementById("refreshDashboardButton"),
-  kpiTotalDay: document.getElementById("kpiTotalDay"),
+  kpiAverageDailyMonth: document.getElementById("kpiAverageDailyMonth"),
+  kpiAverageDailyMonthLabel: document.getElementById("kpiAverageDailyMonthLabel"),
   kpiTotalMonth: document.getElementById("kpiTotalMonth"),
   kpiBalanceDay: document.getElementById("kpiBalanceDay"),
   kpiMonthReception: document.getElementById("kpiMonthReception"),
   kpiMonthDelivered: document.getElementById("kpiMonthDelivered"),
-  kpiMonthLabel: document.getElementById("kpiMonthLabel"),
-  kpiFlowMonthLabel: document.getElementById("kpiFlowMonthLabel"),
-  kpiShiftMonthLabel: document.getElementById("kpiShiftMonthLabel"),
-  kpiOperatorMonthLabel: document.getElementById("kpiOperatorMonthLabel"),
+  kpiMonthPH: document.getElementById("kpiMonthPH"),
   monthlyFlowChartYear: document.getElementById("monthlyFlowChartYear"),
   monthlyFlowChartActivityFilter: document.getElementById("monthlyFlowChartActivityFilter"),
   monthlyFlowChartActivityOptions: document.getElementById("monthlyFlowChartActivityOptions"),
@@ -741,10 +741,12 @@ async function loadDashboard() {
     APP_STATE.dashboard.totalMonth = data.totalMonth || 0;
     APP_STATE.dashboard.byShiftMonth = data.byShiftMonth || {};
     APP_STATE.dashboard.byOperatorMonth = data.byOperatorMonth || [];
-    APP_STATE.dashboard.totalDay = data.totalDay || 0;
+    APP_STATE.dashboard.averageDailyMonth = data.averageDailyMonth || 0;
+    APP_STATE.dashboard.monthlyRecordDays = data.monthlyRecordDays || 0;
     APP_STATE.dashboard.balanceDay = data.balanceDay || 0;
     APP_STATE.dashboard.monthlyReception = data.monthlyReception || 0;
     APP_STATE.dashboard.monthlyDelivered = data.monthlyDelivered || 0;
+    APP_STATE.dashboard.monthlyPH = data.monthlyPH || 0;
     APP_STATE.dashboard.monthlyFlowByMonth = data.monthlyFlowByMonth || [];
 
     renderDashboard();
@@ -757,19 +759,15 @@ async function loadDashboard() {
 }
 
 function renderDashboard() {
-  DOM.kpiTotalDay.textContent = formatQuantity(APP_STATE.dashboard.totalDay);
+  DOM.kpiAverageDailyMonth.textContent = formatQuantity(Math.round(APP_STATE.dashboard.averageDailyMonth));
+  const recordDays = APP_STATE.dashboard.monthlyRecordDays;
+  const recordDayLabel = recordDays === 1 ? "día con registro" : "días con registros";
+  DOM.kpiAverageDailyMonthLabel.textContent = `${formatQuantity(recordDays)} ${recordDayLabel}`;
   DOM.kpiTotalMonth.textContent = formatQuantity(APP_STATE.dashboard.totalMonth);
   DOM.kpiBalanceDay.textContent = formatQuantity(APP_STATE.dashboard.balanceDay);
   DOM.kpiMonthReception.textContent = formatQuantity(APP_STATE.dashboard.monthlyReception);
   DOM.kpiMonthDelivered.textContent = formatQuantity(APP_STATE.dashboard.monthlyDelivered);
-  DOM.kpiMonthLabel.textContent = APP_STATE.dashboard.monthKey
-    ? `Periodo ${APP_STATE.dashboard.monthKey}`
-    : "Periodo --";
-  DOM.kpiFlowMonthLabel.textContent = APP_STATE.dashboard.monthKey
-    ? `Periodo ${APP_STATE.dashboard.monthKey}`
-    : "Periodo --";
-  DOM.kpiShiftMonthLabel.textContent = DOM.kpiFlowMonthLabel.textContent;
-  DOM.kpiOperatorMonthLabel.textContent = DOM.kpiFlowMonthLabel.textContent;
+  DOM.kpiMonthPH.textContent = formatQuantity(APP_STATE.dashboard.monthlyPH);
   renderMonthlyFlowChart();
 
   if (DOM.monthSelector.value !== APP_STATE.dashboard.monthKey && APP_STATE.dashboard.monthKey) {
