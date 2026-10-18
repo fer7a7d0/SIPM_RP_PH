@@ -800,7 +800,7 @@ textarea:focus {
   position: absolute;
   top: calc(100% + 5px);
   right: 0;
-  width: min(360px, calc(100vw - 96px));
+  width: min(720px, calc(100vw - 48px));
   padding: 10px;
   border: 1px solid #bcccdc;
   border-radius: var(--radius-md);
@@ -856,9 +856,9 @@ textarea:focus {
 }
 
 .monthly-flow-chart-activity-options label > span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .monthly-flow-chart-activity-swatch {
