@@ -1353,6 +1353,34 @@ thead th {
     max-width: 100%;
   }
 
+  .monthly-flow-chart-activity-menu {
+    position: fixed;
+    z-index: 60;
+    top: auto;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom) + 8px);
+    left: 12px;
+    width: auto;
+    max-height: calc(100vh - 112px - env(safe-area-inset-top));
+    max-height: calc(100dvh - 112px - env(safe-area-inset-top));
+    overflow: hidden;
+  }
+
+  .monthly-flow-chart-activity-options {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: calc(100vh - 236px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 236px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .monthly-flow-chart-activity-options label > span:last-child {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
   .record-editor form,
   .record-editor .form-grid {
     width: 100%;
