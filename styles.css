@@ -635,6 +635,19 @@ textarea:focus {
   padding: 5px 4px;
 }
 
+.kpi-operator-table th:first-child,
+.kpi-operator-table td:first-child {
+  width: 70%;
+  overflow-wrap: anywhere;
+}
+
+.kpi-operator-table th:last-child,
+.kpi-operator-table td:last-child {
+  width: 30%;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .monthly-flow-chart-panel {
   margin-top: 14px;
   background: #f8fafc;
@@ -1232,6 +1245,10 @@ thead th {
 
   .kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-grid-breakdown {
+    grid-template-columns: 1fr;
   }
 
   .tab-nav {

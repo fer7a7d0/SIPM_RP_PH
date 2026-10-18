@@ -1131,10 +1131,9 @@ function renderStatList(targetElement, keys, valuesMap) {
 
 function renderOperatorTable(targetElement, rows) {
   targetElement.innerHTML = "";
-  rows.forEach((item, index) => {
+  rows.forEach((item) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${index + 1}</td>
       <td>${item.operator}</td>
       <td>${formatQuantity(item.total)}</td>
     `;
