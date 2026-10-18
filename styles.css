@@ -1238,9 +1238,33 @@ thead th {
     text-align: left;
   }
 
-  .form-grid,
+  .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  .form-grid > label,
+  .form-grid .date-picker-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .form-grid input,
+  .form-grid select,
+  .form-grid textarea {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+    line-height: 1.25;
+  }
+
+  .form-grid input,
+  .form-grid select {
+    height: 46px;
   }
 
   .kpi-grid {
