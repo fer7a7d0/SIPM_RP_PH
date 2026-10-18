@@ -132,6 +132,7 @@ const DOM = {
   kpiMonthDelivered: document.getElementById("kpiMonthDelivered"),
   kpiMonthPH: document.getElementById("kpiMonthPH"),
   monthlyFlowChartYear: document.getElementById("monthlyFlowChartYear"),
+  monthlyFlowChartAverageToggle: document.getElementById("monthlyFlowChartAverageToggle"),
   monthlyFlowChartActivityFilter: document.getElementById("monthlyFlowChartActivityFilter"),
   monthlyFlowChartActivityOptions: document.getElementById("monthlyFlowChartActivityOptions"),
   monthlyFlowChartSelectedCount: document.getElementById("monthlyFlowChartSelectedCount"),
@@ -217,6 +218,7 @@ function bindEvents() {
   DOM.refreshDashboardButton.addEventListener("click", loadDashboard);
   DOM.monthSelector.addEventListener("change", loadDashboard);
   DOM.monthlyFlowChartYear.addEventListener("change", drawMonthlyFlowChart);
+  DOM.monthlyFlowChartAverageToggle.addEventListener("change", drawMonthlyFlowChart);
   DOM.monthlyFlowChartActivityOptions.addEventListener("change", onMonthlyFlowActivityChange);
   DOM.monthlyFlowChartSelectAll.addEventListener("click", () => setAllMonthlyFlowActivities(true));
   DOM.monthlyFlowChartDeselectAll.addEventListener("click", () => setAllMonthlyFlowActivities(false));
@@ -998,18 +1000,43 @@ function drawMonthlyFlowChart() {
   const selectedActivities = selectedActivityKeys
     .map((key) => allActivityNames.find((activity) => getMonthlyFlowActivityKey(activity) === key))
     .filter(Boolean);
+  const canShowActivityAverage = selectedActivities.length === 1;
+  DOM.monthlyFlowChartAverageToggle.disabled = !canShowActivityAverage;
+  DOM.monthlyFlowChartAverageToggle.closest(".monthly-flow-chart-average-toggle")
+    .classList.toggle("is-disabled", !canShowActivityAverage);
+  if (!canShowActivityAverage) {
+    DOM.monthlyFlowChartAverageToggle.checked = false;
+  }
   const months = yearMonths.filter((month) => selectedActivities.some((activity) => getMonthlyFlowActivityValue(month, activity) > 0));
-  const maxValue = Math.max(0, ...months.flatMap((month) => selectedActivities.map((activity) => getMonthlyFlowActivityValue(month, activity))));
+  const averageByActivity = new Map(selectedActivities.map((activity) => {
+    const values = months.map((month) => getMonthlyFlowActivityValue(month, activity)).filter((value) => value > 0);
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return [activity, values.length ? total / values.length : 0];
+  }));
+  const averageEntries = canShowActivityAverage && DOM.monthlyFlowChartAverageToggle.checked
+    ? selectedActivities
+      .map((activity) => ({ activity, average: averageByActivity.get(activity) || 0 }))
+      .filter((entry) => entry.average > 0)
+    : [];
+  const maxValue = Math.max(0,
+    ...months.flatMap((month) => selectedActivities.map((activity) => getMonthlyFlowActivityValue(month, activity))),
+    ...averageEntries.map((entry) => entry.average)
+  );
   const compactFormatter = new Intl.NumberFormat("es-MX", { notation: "compact", maximumFractionDigits: 1 });
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const isMobile = DOM.monthlyFlowChartPlot.clientWidth < 440;
   const baseWidth = DOM.monthlyFlowChartPlot.clientWidth || 320;
-  const minimumGroupWidth = selectedActivities.length > 5 ? Math.min(110, 14 + selectedActivities.length * 3.6) : 0;
-  const width = Math.max(baseWidth, (minimumGroupWidth * Math.max(months.length, 1)) + (isMobile ? 40 : 54));
-  const height = width < 440 ? 236 : 272;
   const plotLeft = isMobile ? 30 : 42;
   const plotRight = 10;
-  const plotTop = 12;
+  const minimumGroupWidth = selectedActivities.length
+    ? Math.min(110, Math.max(28, 12 + selectedActivities.length * 7))
+    : 0;
+  const width = Math.max(
+    baseWidth,
+    (minimumGroupWidth * Math.max(months.length, 1)) + plotLeft + plotRight + 20
+  );
+  const height = isMobile ? 250 : 286;
+  const plotTop = averageEntries.length ? 28 : 12;
   const plotBottom = height - 38;
   const plotHeight = plotBottom - plotTop;
   const plotWidth = width - plotLeft - plotRight;
@@ -1068,6 +1095,31 @@ function drawMonthlyFlowChart() {
     DOM.monthlyFlowChartSvg.appendChild(monthLabel);
   });
 
+  if (averageEntries.length > 0 && months.length > 0) {
+    averageEntries.forEach((entry) => {
+      const label = getMonthlyFlowActivityTooltipLabel(entry.activity);
+      const monthsWithRecords = months.filter((month) => getMonthlyFlowActivityValue(month, entry.activity) > 0).length;
+      const color = getMonthlyFlowActivityColor(entry.activity, allActivityNames);
+      const lineY = plotBottom - (entry.average / maxValue) * plotHeight;
+      const line = createMonthlyFlowSvgElement("line", {
+        x1: plotLeft,
+        x2: width - plotRight,
+        y1: lineY,
+        y2: lineY,
+        class: "monthly-flow-chart-average-line",
+        stroke: color,
+        tabindex: 0,
+        role: "img",
+        "aria-label": `${label}: promedio mensual ${formatMonthlyFlowAverage(entry.average)} cilindros en ${monthsWithRecords} meses`
+      });
+      const tooltipText = `${label}: promedio ${formatMonthlyFlowAverage(entry.average)} cilindros/mes (${monthsWithRecords} ${monthsWithRecords === 1 ? "mes" : "meses"})`;
+      addMonthlyFlowChartTooltipEvents(line, tooltipText);
+      DOM.monthlyFlowChartSvg.appendChild(line);
+
+      appendMonthlyFlowAverageValueLabel(entry.average, lineY, color, plotLeft, width - plotRight, plotTop, plotBottom);
+    });
+  }
+
   if (selectedActivities.length === 0 || months.length === 0) {
     const emptyLabel = createMonthlyFlowSvgElement("text", {
       x: plotLeft + plotWidth / 2,
@@ -1088,6 +1140,66 @@ function createMonthlyFlowSvgElement(name, attributes, text) {
   return element;
 }
 
+function formatMonthlyFlowAverage(value) {
+  return new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1 }).format(value);
+}
+
+function appendMonthlyFlowAverageValueLabel(average, lineY, color, plotLeft, plotRight, plotTop, plotBottom) {
+  const valueLabel = createMonthlyFlowSvgElement("text", {
+    class: "monthly-flow-chart-average-value-label",
+    fill: color,
+    "text-anchor": "end",
+    "aria-label": `Promedio: ${formatQuantity(Math.round(average))}`
+  }, formatQuantity(Math.round(average)));
+  DOM.monthlyFlowChartSvg.appendChild(valueLabel);
+
+  const labelWidth = valueLabel.getBBox().width;
+  const labelHeight = valueLabel.getBBox().height;
+  const candidateXs = [plotRight - 5, plotLeft + (plotRight - plotLeft) * 0.78, plotLeft + (plotRight - plotLeft) * 0.55, plotLeft + (plotRight - plotLeft) * 0.32];
+  const labelY = Math.max(12, lineY - 4);
+  const otherLabels = [...DOM.monthlyFlowChartSvg.querySelectorAll(".monthly-flow-chart-axis-label, .monthly-flow-chart-month-label")]
+    .map((element) => element.getBoundingClientRect());
+  let chosenX = candidateXs[0];
+  let lowestOverlap = Infinity;
+
+  candidateXs.forEach((x) => {
+    const left = DOM.monthlyFlowChartSvg.getBoundingClientRect().left + x - labelWidth;
+    const right = DOM.monthlyFlowChartSvg.getBoundingClientRect().left + x;
+    const top = DOM.monthlyFlowChartSvg.getBoundingClientRect().top + labelY - labelHeight;
+    const bottom = DOM.monthlyFlowChartSvg.getBoundingClientRect().top + labelY;
+    const overlap = otherLabels.reduce((area, rect) => {
+      const width = Math.max(0, Math.min(right, rect.right) - Math.max(left, rect.left));
+      const height = Math.max(0, Math.min(bottom, rect.bottom) - Math.max(top, rect.top));
+      return area + width * height;
+    }, 0);
+    if (overlap < lowestOverlap) {
+      lowestOverlap = overlap;
+      chosenX = x;
+    }
+  });
+
+  valueLabel.setAttribute("x", String(chosenX));
+  valueLabel.setAttribute("y", String(labelY));
+}
+
+function addMonthlyFlowChartTooltipEvents(element, text) {
+  element.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse") {
+      showMonthlyFlowChartTooltip(element, text, event);
+    }
+  });
+  element.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "mouse") {
+      DOM.monthlyFlowChartTooltip.hidden = true;
+    }
+  });
+  element.addEventListener("focus", () => showMonthlyFlowChartTooltip(element, text));
+  element.addEventListener("blur", () => {
+    DOM.monthlyFlowChartTooltip.hidden = true;
+  });
+  element.addEventListener("click", (event) => showMonthlyFlowChartTooltip(element, text, event));
+}
+
 function appendMonthlyFlowBar(month, monthName, value, seriesLabel, color, x, width, maxValue, plotBottom, plotHeight) {
   const barHeight = maxValue ? (value / maxValue) * plotHeight : 0;
   const minimumHitHeight = 10;
@@ -1106,21 +1218,7 @@ function appendMonthlyFlowBar(month, monthName, value, seriesLabel, color, x, wi
   bar.style.fill = value > 0 ? color : "transparent";
   const tooltipLabel = getMonthlyFlowActivityTooltipLabel(seriesLabel);
   const tooltipText = `${tooltipLabel}: ${formatQuantity(value)} cilindros`;
-  bar.addEventListener("pointerenter", (event) => {
-    if (event.pointerType === "mouse") {
-      showMonthlyFlowChartTooltip(bar, tooltipText, event);
-    }
-  });
-  bar.addEventListener("pointerleave", (event) => {
-    if (event.pointerType === "mouse") {
-      DOM.monthlyFlowChartTooltip.hidden = true;
-    }
-  });
-  bar.addEventListener("focus", () => showMonthlyFlowChartTooltip(bar, tooltipText));
-  bar.addEventListener("blur", () => {
-    DOM.monthlyFlowChartTooltip.hidden = true;
-  });
-  bar.addEventListener("click", (event) => showMonthlyFlowChartTooltip(bar, tooltipText, event));
+  addMonthlyFlowChartTooltipEvents(bar, tooltipText);
   DOM.monthlyFlowChartSvg.appendChild(bar);
 }
 
@@ -1145,14 +1243,44 @@ function showMonthlyFlowChartTooltip(bar, text, event) {
   tooltip.textContent = text;
   tooltip.hidden = false;
 
-  const pointerX = event && event.clientX ? event.clientX - plotRect.left : barRect.left - plotRect.left + barRect.width / 2;
-  const pointerY = event && event.clientY ? event.clientY - plotRect.top : barRect.top - plotRect.top;
-  const left = Math.max(6, Math.min(pointerX + 8, plotRect.width - tooltip.offsetWidth - 6));
-  const top = pointerY - tooltip.offsetHeight - 8 >= 6
-    ? pointerY - tooltip.offsetHeight - 8
-    : Math.min(plotRect.height - tooltip.offsetHeight - 6, barRect.bottom - plotRect.top + 8);
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${Math.max(6, top)}px`;
+  const pointerX = event && Number.isFinite(event.clientX)
+    ? event.clientX - plotRect.left
+    : barRect.left - plotRect.left + barRect.width / 2;
+  const pointerY = event && Number.isFinite(event.clientY)
+    ? event.clientY - plotRect.top
+    : barRect.top - plotRect.top;
+  const padding = 6;
+  const tooltipWidth = tooltip.offsetWidth;
+  const tooltipHeight = tooltip.offsetHeight;
+  const candidates = [
+    { left: pointerX + 10, top: pointerY - tooltipHeight - 9 },
+    { left: pointerX + 10, top: pointerY + 9 },
+    { left: pointerX - tooltipWidth - 10, top: pointerY - tooltipHeight - 9 },
+    { left: pointerX - tooltipWidth - 10, top: pointerY + 9 }
+  ];
+  const chartLabelRects = [...DOM.monthlyFlowChartSvg.querySelectorAll(".monthly-flow-chart-axis-label, .monthly-flow-chart-month-label")]
+    .map((label) => {
+      const rect = label.getBoundingClientRect();
+      return {
+        left: rect.left - plotRect.left,
+        right: rect.right - plotRect.left,
+        top: rect.top - plotRect.top,
+        bottom: rect.bottom - plotRect.top
+      };
+    });
+  const placements = candidates.map((candidate) => {
+    const left = Math.max(padding, Math.min(candidate.left, plotRect.width - tooltipWidth - padding));
+    const top = Math.max(padding, Math.min(candidate.top, plotRect.height - tooltipHeight - padding));
+    const overlap = chartLabelRects.reduce((area, label) => {
+      const overlapWidth = Math.max(0, Math.min(left + tooltipWidth, label.right) - Math.max(left, label.left));
+      const overlapHeight = Math.max(0, Math.min(top + tooltipHeight, label.bottom) - Math.max(top, label.top));
+      return area + overlapWidth * overlapHeight;
+    }, 0);
+    return { left, top, overlap };
+  }).sort((placementA, placementB) => placementA.overlap - placementB.overlap);
+
+  tooltip.style.left = `${placements[0].left}px`;
+  tooltip.style.top = `${placements[0].top}px`;
 }
 
 function onMonthlyFlowChartOutsideClick(event) {

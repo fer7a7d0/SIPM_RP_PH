@@ -734,6 +734,37 @@ textarea:focus {
   margin-top: 12px;
 }
 
+.monthly-flow-chart-average-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.monthly-flow-chart-average-toggle {
+  display: inline-flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 7px;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.monthly-flow-chart-average-toggle input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--color-primary);
+}
+
+.monthly-flow-chart-average-toggle.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .monthly-flow-chart-year-label {
   display: inline-flex;
   align-items: center;
@@ -908,6 +939,30 @@ textarea:focus {
   outline: none;
   stroke: var(--color-text);
   stroke-width: 2;
+}
+
+.monthly-flow-chart-average-line {
+  fill: none;
+  stroke-width: 1.8;
+  stroke-dasharray: 5 4;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.monthly-flow-chart-average-line:focus-visible {
+  outline: none;
+  stroke-width: 3;
+}
+
+.monthly-flow-chart-average-value-label {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--color-panel);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+  pointer-events: none;
 }
 
 .monthly-flow-chart-reception {
