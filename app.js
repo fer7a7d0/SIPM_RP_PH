@@ -128,6 +128,8 @@ const DOM = {
   kpiMonthDelivered: document.getElementById("kpiMonthDelivered"),
   kpiMonthLabel: document.getElementById("kpiMonthLabel"),
   kpiFlowMonthLabel: document.getElementById("kpiFlowMonthLabel"),
+  kpiShiftMonthLabel: document.getElementById("kpiShiftMonthLabel"),
+  kpiOperatorMonthLabel: document.getElementById("kpiOperatorMonthLabel"),
   monthlyFlowChartYear: document.getElementById("monthlyFlowChartYear"),
   monthlyFlowChartActivityFilter: document.getElementById("monthlyFlowChartActivityFilter"),
   monthlyFlowChartActivityOptions: document.getElementById("monthlyFlowChartActivityOptions"),
@@ -766,6 +768,8 @@ function renderDashboard() {
   DOM.kpiFlowMonthLabel.textContent = APP_STATE.dashboard.monthKey
     ? `Periodo ${APP_STATE.dashboard.monthKey}`
     : "Periodo --";
+  DOM.kpiShiftMonthLabel.textContent = DOM.kpiFlowMonthLabel.textContent;
+  DOM.kpiOperatorMonthLabel.textContent = DOM.kpiFlowMonthLabel.textContent;
   renderMonthlyFlowChart();
 
   if (DOM.monthSelector.value !== APP_STATE.dashboard.monthKey && APP_STATE.dashboard.monthKey) {
@@ -947,11 +951,12 @@ function drawMonthlyFlowChart() {
   const year = DOM.monthlyFlowChartYear.value || APP_STATE.monthlyFlowChartYear;
   APP_STATE.monthlyFlowChartYear = year;
   const monthMap = new Map(historicalData.map((item) => [item.monthKey, item]));
-  const months = Array.from({ length: 12 }, (_, index) => {
+  const yearMonths = Array.from({ length: 12 }, (_, index) => {
     const monthKey = `${year}-${String(index + 1).padStart(2, "0")}`;
     const values = monthMap.get(monthKey) || {};
     return {
       monthKey,
+      monthNumber: index + 1,
       activities: values.activities || {},
       reception: Number(values.reception) || 0,
       delivered: Number(values.delivered) || 0
@@ -962,13 +967,14 @@ function drawMonthlyFlowChart() {
   const selectedActivities = selectedActivityKeys
     .map((key) => allActivityNames.find((activity) => getMonthlyFlowActivityKey(activity) === key))
     .filter(Boolean);
+  const months = yearMonths.filter((month) => selectedActivities.some((activity) => getMonthlyFlowActivityValue(month, activity) > 0));
   const maxValue = Math.max(0, ...months.flatMap((month) => selectedActivities.map((activity) => getMonthlyFlowActivityValue(month, activity))));
   const compactFormatter = new Intl.NumberFormat("es-MX", { notation: "compact", maximumFractionDigits: 1 });
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const isMobile = DOM.monthlyFlowChartPlot.clientWidth < 440;
   const baseWidth = DOM.monthlyFlowChartPlot.clientWidth || 320;
   const minimumGroupWidth = selectedActivities.length > 5 ? Math.min(110, 14 + selectedActivities.length * 3.6) : 0;
-  const width = Math.max(baseWidth, (minimumGroupWidth * 12) + (isMobile ? 40 : 54));
+  const width = Math.max(baseWidth, (minimumGroupWidth * Math.max(months.length, 1)) + (isMobile ? 40 : 54));
   const height = width < 440 ? 236 : 272;
   const plotLeft = isMobile ? 30 : 42;
   const plotRight = 10;
@@ -976,34 +982,38 @@ function drawMonthlyFlowChart() {
   const plotBottom = height - 38;
   const plotHeight = plotBottom - plotTop;
   const plotWidth = width - plotLeft - plotRight;
-  const groupWidth = plotWidth / 12;
+  const groupWidth = plotWidth / Math.max(months.length, 1);
   const activityGap = Math.min(3, groupWidth * 0.04);
   const barWidth = selectedActivities.length ? Math.min(18, Math.max(1, ((groupWidth - 4) / selectedActivities.length) * 0.72)) : 0;
 
   DOM.monthlyFlowChartTooltip.hidden = true;
   DOM.monthlyFlowChartSvg.style.width = `${width}px`;
   DOM.monthlyFlowChartSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  DOM.monthlyFlowChartSvg.setAttribute("aria-label", `Actividades seleccionadas de enero a diciembre de ${year}`);
+  DOM.monthlyFlowChartSvg.setAttribute("aria-label", months.length
+    ? `Actividades seleccionadas de ${months.length} meses con registros de ${year}`
+    : `Sin registros para las actividades seleccionadas en ${year}`);
   DOM.monthlyFlowChartSvg.replaceChildren();
 
-  for (let tick = 0; tick <= 4; tick += 1) {
-    const fraction = tick / 4;
-    const y = plotBottom - fraction * plotHeight;
-    const tickValue = maxValue * fraction;
-    const line = createMonthlyFlowSvgElement("line", {
-      x1: plotLeft,
-      x2: width - plotRight,
-      y1: y,
-      y2: y,
-      class: "monthly-flow-chart-gridline"
-    });
-    const label = createMonthlyFlowSvgElement("text", {
-      x: plotLeft - 7,
-      y: y + 4,
-      class: "monthly-flow-chart-axis-label",
-      "text-anchor": "end"
-    }, compactFormatter.format(tickValue));
-    DOM.monthlyFlowChartSvg.append(line, label);
+  if (months.length > 0) {
+    for (let tick = 0; tick <= 4; tick += 1) {
+      const fraction = tick / 4;
+      const y = plotBottom - fraction * plotHeight;
+      const tickValue = maxValue * fraction;
+      const line = createMonthlyFlowSvgElement("line", {
+        x1: plotLeft,
+        x2: width - plotRight,
+        y1: y,
+        y2: y,
+        class: "monthly-flow-chart-gridline"
+      });
+      const label = createMonthlyFlowSvgElement("text", {
+        x: plotLeft - 7,
+        y: y + 4,
+        class: "monthly-flow-chart-axis-label",
+        "text-anchor": "end"
+      }, compactFormatter.format(tickValue));
+      DOM.monthlyFlowChartSvg.append(line, label);
+    }
   }
 
   months.forEach((month, index) => {
@@ -1015,7 +1025,7 @@ function drawMonthlyFlowChart() {
       const label = getMonthlyFlowActivityLabel(activity);
       const color = getMonthlyFlowActivityColor(activity, allActivityNames);
       const x = firstBarX + activityIndex * (barWidth + activityGap);
-      appendMonthlyFlowBar(month, monthNames[index], value, label, color, x, barWidth, maxValue, plotBottom, plotHeight);
+      appendMonthlyFlowBar(month, monthNames[month.monthNumber - 1], value, label, color, x, barWidth, maxValue, plotBottom, plotHeight);
     });
 
     const monthLabel = createMonthlyFlowSvgElement("text", {
@@ -1023,17 +1033,17 @@ function drawMonthlyFlowChart() {
       y: height - 10,
       class: "monthly-flow-chart-month-label",
       "text-anchor": "middle"
-    }, monthNames[index]);
+    }, monthNames[month.monthNumber - 1]);
     DOM.monthlyFlowChartSvg.appendChild(monthLabel);
   });
 
-  if (selectedActivities.length === 0) {
+  if (selectedActivities.length === 0 || months.length === 0) {
     const emptyLabel = createMonthlyFlowSvgElement("text", {
       x: plotLeft + plotWidth / 2,
       y: plotTop + plotHeight / 2,
       class: "monthly-flow-chart-empty-label",
       "text-anchor": "middle"
-    }, "Selecciona una actividad para mostrarla");
+    }, selectedActivities.length === 0 ? "Selecciona una actividad para mostrarla" : "Sin registros para las actividades seleccionadas");
     DOM.monthlyFlowChartSvg.appendChild(emptyLabel);
   }
 }

@@ -571,6 +571,10 @@ textarea:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.kpi-grid-breakdown {
+  margin-top: 12px;
+}
+
 .kpi-card {
   background: #e9f8f2;
   border-left: 7px solid var(--color-primary);
@@ -607,6 +611,28 @@ textarea:focus {
 
 .kpi-dual-row strong {
   font-size: 1.15rem;
+}
+
+.kpi-stat-list {
+  margin: 4px 0 8px;
+}
+
+.kpi-stat-list li {
+  padding: 5px 0;
+}
+
+.kpi-operator-table-wrap {
+  margin: 4px 0 8px;
+}
+
+.kpi-operator-table {
+  margin-top: 0;
+  font-size: 0.8rem;
+}
+
+.kpi-operator-table th,
+.kpi-operator-table td {
+  padding: 5px 4px;
 }
 
 .monthly-flow-chart-panel {
@@ -1055,7 +1081,7 @@ thead th {
   }
 
   .kpi-card.balance-highlight {
-    background: #3b2a12;
+    background: #20352a;
     border-left-color: #f4a63c;
   }
 
