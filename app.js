@@ -31,7 +31,6 @@ const APP_STATE = {
     monthKey: "",
     totalMonth: 0,
     averageDailyMonth: 0,
-    monthlyRecordDays: 0,
     balanceDay: 0,
     monthlyReception: 0,
     monthlyDelivered: 0,
@@ -57,6 +56,9 @@ const DOM = {
   currentDate: document.getElementById("currentDate"),
   currentTime: document.getElementById("currentTime"),
   productionDate: document.getElementById("productionDate"),
+  productionDateDay: document.getElementById("productionDateDay"),
+  productionDateMonth: document.getElementById("productionDateMonth"),
+  productionDateYear: document.getElementById("productionDateYear"),
   productionDatePickerButton: document.getElementById("productionDatePickerButton"),
   productionDateCalendar: document.getElementById("productionDateCalendar"),
   productionDateMonthLabel: document.getElementById("productionDateMonthLabel"),
@@ -85,6 +87,9 @@ const DOM = {
   tabDashboard: document.getElementById("tabDashboard"),
   tabConsulta: document.getElementById("tabConsulta"),
   consultationStartDate: document.getElementById("consultationStartDate"),
+  consultationStartDateDay: document.getElementById("consultationStartDateDay"),
+  consultationStartDateMonth: document.getElementById("consultationStartDateMonth"),
+  consultationStartDateYear: document.getElementById("consultationStartDateYear"),
   consultationStartDatePickerButton: document.getElementById("consultationStartDatePickerButton"),
   consultationStartDateCalendar: document.getElementById("consultationStartDateCalendar"),
   consultationStartDateMonthLabel: document.getElementById("consultationStartDateMonthLabel"),
@@ -93,6 +98,9 @@ const DOM = {
   consultationStartDateNextMonth: document.getElementById("consultationStartDateNextMonth"),
   consultationStartDateTodayButton: document.getElementById("consultationStartDateTodayButton"),
   consultationEndDate: document.getElementById("consultationEndDate"),
+  consultationEndDateDay: document.getElementById("consultationEndDateDay"),
+  consultationEndDateMonth: document.getElementById("consultationEndDateMonth"),
+  consultationEndDateYear: document.getElementById("consultationEndDateYear"),
   consultationEndDatePickerButton: document.getElementById("consultationEndDatePickerButton"),
   consultationEndDateCalendar: document.getElementById("consultationEndDateCalendar"),
   consultationEndDateMonthLabel: document.getElementById("consultationEndDateMonthLabel"),
@@ -124,7 +132,6 @@ const DOM = {
   monthSelector: document.getElementById("monthSelector"),
   refreshDashboardButton: document.getElementById("refreshDashboardButton"),
   kpiAverageDailyMonth: document.getElementById("kpiAverageDailyMonth"),
-  kpiAverageDailyMonthLabel: document.getElementById("kpiAverageDailyMonthLabel"),
   kpiTotalMonth: document.getElementById("kpiTotalMonth"),
   kpiBalanceDay: document.getElementById("kpiBalanceDay"),
   kpiMonthReception: document.getElementById("kpiMonthReception"),
@@ -148,6 +155,7 @@ function initApp() {
   renderStaticActivities();
   initializeDashboardFilters();
   DOM.productionDate.value = formatDateForMexico(formatDateKey(new Date()));
+  syncDatePartsFromValue("production");
   startClock();
   loadInitialData();
 }
@@ -160,6 +168,7 @@ function initializeDashboardFilters() {
 
 function bindEvents() {
   DOM.productionForm.addEventListener("submit", onSubmitProduction);
+  ["production", "start", "end"].forEach(bindDatePartEvents);
   DOM.downloadCsvButton.addEventListener("click", exportDailyCsvFromServer);
   DOM.tabCapture.addEventListener("click", () => activateScreen("capture"));
   DOM.tabDashboard.addEventListener("click", () => {
@@ -171,6 +180,8 @@ function bindEvents() {
     const today = formatDateForMexico(formatDateKey(new Date()));
     DOM.consultationStartDate.value = today;
     DOM.consultationEndDate.value = "";
+    syncDatePartsFromValue("start");
+    syncDatePartsFromValue("end");
     closeConsultationDateCalendars();
     loadConsultation();
   });
@@ -420,6 +431,9 @@ function onConsultationCalendarClick(event, which) {
     : which === "production" ? DOM.productionDate
       : which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
   input.value = formatDateForMexico(dayButton.dataset.date);
+  if (which !== "editor") {
+    syncDatePartsFromValue(which);
+  }
   closeConsultationDateCalendars();
   if (which === "production" || which === "editor") {
     return;
@@ -433,6 +447,7 @@ function onConsultationCalendarClick(event, which) {
 
 function selectProductionToday() {
   DOM.productionDate.value = formatDateForMexico(formatDateKey(new Date()));
+  syncDatePartsFromValue("production");
   closeConsultationDateCalendars();
 }
 
@@ -444,6 +459,7 @@ function selectRecordEditorToday() {
 function selectConsultationToday(which) {
   const input = which === "start" ? DOM.consultationStartDate : DOM.consultationEndDate;
   input.value = formatDateForMexico(formatDateKey(new Date()));
+  syncDatePartsFromValue(which);
   closeConsultationDateCalendars();
   if (which === "start") {
     onConsultationStartDateChange();
@@ -455,8 +471,90 @@ function selectConsultationToday(which) {
 function onConsultationStartDateChange() {
   if (parseMexicoDate(DOM.consultationStartDate.value)) {
     DOM.consultationEndDate.value = "";
+    syncDatePartsFromValue("end");
   }
   invalidateConsultationResults();
+}
+
+function getDateControl(which) {
+  if (which === "production") {
+    return {
+      valueInput: DOM.productionDate,
+      fields: [DOM.productionDateDay, DOM.productionDateMonth, DOM.productionDateYear]
+    };
+  }
+  if (which === "start") {
+    return {
+      valueInput: DOM.consultationStartDate,
+      fields: [DOM.consultationStartDateDay, DOM.consultationStartDateMonth, DOM.consultationStartDateYear]
+    };
+  }
+  return {
+    valueInput: DOM.consultationEndDate,
+    fields: [DOM.consultationEndDateDay, DOM.consultationEndDateMonth, DOM.consultationEndDateYear]
+  };
+}
+
+function bindDatePartEvents(which) {
+  const { fields } = getDateControl(which);
+  fields.forEach((field, index) => {
+    field.addEventListener("input", () => {
+      field.value = field.value.replace(/\D/g, "").slice(0, field.maxLength);
+      updateDateValueFromParts(which);
+      onDateControlValueChanged(which);
+      if (field.value.length === field.maxLength && fields[index + 1]) {
+        fields[index + 1].focus();
+      }
+    });
+    field.addEventListener("blur", () => {
+      if (index < 2 && field.value.length === 1) {
+        field.value = field.value.padStart(2, "0");
+      }
+      updateDateValueFromParts(which);
+      onDateControlValueChanged(which);
+    });
+  });
+}
+
+function updateDateValueFromParts(which) {
+  const { valueInput, fields } = getDateControl(which);
+  const [day, month, year] = fields.map((field) => field.value);
+  if (day.length !== 2 || month.length !== 2 || year.length !== 4) {
+    valueInput.value = "";
+    return false;
+  }
+
+  const value = `${day}/${month}/${year}`;
+  if (!parseMexicoDate(value)) {
+    valueInput.value = "";
+    return false;
+  }
+  valueInput.value = value;
+  return true;
+}
+
+function syncDatePartsFromValue(which) {
+  const { valueInput, fields } = getDateControl(which);
+  const dateKey = parseMexicoDate(valueInput.value);
+  if (!dateKey) {
+    fields.forEach((field) => {
+      field.value = "";
+    });
+    return;
+  }
+
+  const [year, month, day] = dateKey.split("-");
+  [day, month, year].forEach((value, index) => {
+    fields[index].value = value;
+  });
+}
+
+function onDateControlValueChanged(which) {
+  if (which === "start") {
+    onConsultationStartDateChange();
+  } else if (which === "end") {
+    invalidateConsultationResults();
+  }
 }
 
 function parseMexicoDate(value) {
@@ -634,6 +732,7 @@ async function onSubmitProduction(event) {
     setFormMessage("Registro guardado correctamente", "success");
     DOM.productionForm.reset();
     DOM.productionDate.value = formatDateForMexico(payload.date);
+    syncDatePartsFromValue("production");
     DOM.operatorSelect.value = selectedOperator;
     DOM.captureUserInput.value = selectedCaptureUser;
     DOM.activitySelect.value = activityOptions[nextActivityIndex].value;
@@ -742,7 +841,6 @@ async function loadDashboard() {
     APP_STATE.dashboard.byShiftMonth = data.byShiftMonth || {};
     APP_STATE.dashboard.byOperatorMonth = data.byOperatorMonth || [];
     APP_STATE.dashboard.averageDailyMonth = data.averageDailyMonth || 0;
-    APP_STATE.dashboard.monthlyRecordDays = data.monthlyRecordDays || 0;
     APP_STATE.dashboard.balanceDay = data.balanceDay || 0;
     APP_STATE.dashboard.monthlyReception = data.monthlyReception || 0;
     APP_STATE.dashboard.monthlyDelivered = data.monthlyDelivered || 0;
@@ -760,9 +858,6 @@ async function loadDashboard() {
 
 function renderDashboard() {
   DOM.kpiAverageDailyMonth.textContent = formatQuantity(Math.round(APP_STATE.dashboard.averageDailyMonth));
-  const recordDays = APP_STATE.dashboard.monthlyRecordDays;
-  const recordDayLabel = recordDays === 1 ? "día con registro" : "días con registros";
-  DOM.kpiAverageDailyMonthLabel.textContent = `${formatQuantity(recordDays)} ${recordDayLabel}`;
   DOM.kpiTotalMonth.textContent = formatQuantity(APP_STATE.dashboard.totalMonth);
   DOM.kpiBalanceDay.textContent = formatQuantity(APP_STATE.dashboard.balanceDay);
   DOM.kpiMonthReception.textContent = formatQuantity(APP_STATE.dashboard.monthlyReception);

@@ -310,6 +310,10 @@ textarea:focus {
   gap: 12px;
 }
 
+.dashboard-note {
+  margin: 2px 0 0;
+}
+
 .dashboard-controls {
   display: flex;
   align-items: center;
@@ -363,9 +367,51 @@ textarea:focus {
   padding-right: 40px;
 }
 
-.production-date-picker .production-date-input {
+.date-part-fields {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   width: 100%;
-  padding-right: 40px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 38px 4px 6px;
+  border: 1px solid #bcccdc;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: #f8fafc;
+}
+
+.date-part-fields:focus-within {
+  border-color: var(--color-primary);
+  outline: 2px solid rgba(11, 110, 79, 0.3);
+}
+
+.date-part-fields input {
+  min-width: 0;
+  height: 34px;
+  padding: 0 1px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 16px;
+  text-align: center;
+}
+
+.date-part-day,
+.date-part-month {
+  flex: 0 0 30px;
+}
+
+.date-part-year {
+  flex: 0 0 46px;
+}
+
+.date-part-separator {
+  flex: 0 0 5px;
+  color: var(--color-muted);
+  text-align: center;
 }
 
 .record-editor-date-picker .month-filter-input {
@@ -1045,6 +1091,12 @@ thead th {
     background: #111c2e;
     border-color: #2a3d5f;
     color: #e5edf7;
+  }
+
+  .date-part-fields {
+    border-color: #2a3d5f;
+    color: #e5edf7;
+    background: #111c2e;
   }
 
   .btn-secondary {
