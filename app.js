@@ -132,7 +132,6 @@ const DOM = {
   kpiMonthDelivered: document.getElementById("kpiMonthDelivered"),
   kpiMonthPH: document.getElementById("kpiMonthPH"),
   monthlyFlowChartYear: document.getElementById("monthlyFlowChartYear"),
-  monthlyFlowChartAverageToggle: document.getElementById("monthlyFlowChartAverageToggle"),
   monthlyFlowChartActivityFilter: document.getElementById("monthlyFlowChartActivityFilter"),
   monthlyFlowChartActivityOptions: document.getElementById("monthlyFlowChartActivityOptions"),
   monthlyFlowChartSelectedCount: document.getElementById("monthlyFlowChartSelectedCount"),
@@ -218,7 +217,6 @@ function bindEvents() {
   DOM.refreshDashboardButton.addEventListener("click", loadDashboard);
   DOM.monthSelector.addEventListener("change", loadDashboard);
   DOM.monthlyFlowChartYear.addEventListener("change", drawMonthlyFlowChart);
-  DOM.monthlyFlowChartAverageToggle.addEventListener("change", drawMonthlyFlowChart);
   DOM.monthlyFlowChartActivityOptions.addEventListener("change", onMonthlyFlowActivityChange);
   DOM.monthlyFlowChartSelectAll.addEventListener("click", () => setAllMonthlyFlowActivities(true));
   DOM.monthlyFlowChartDeselectAll.addEventListener("click", () => setAllMonthlyFlowActivities(false));
@@ -1001,19 +999,13 @@ function drawMonthlyFlowChart() {
     .map((key) => allActivityNames.find((activity) => getMonthlyFlowActivityKey(activity) === key))
     .filter(Boolean);
   const canShowActivityAverage = selectedActivities.length === 1;
-  DOM.monthlyFlowChartAverageToggle.disabled = !canShowActivityAverage;
-  DOM.monthlyFlowChartAverageToggle.closest(".monthly-flow-chart-average-toggle")
-    .classList.toggle("is-disabled", !canShowActivityAverage);
-  if (!canShowActivityAverage) {
-    DOM.monthlyFlowChartAverageToggle.checked = false;
-  }
   const months = yearMonths.filter((month) => selectedActivities.some((activity) => getMonthlyFlowActivityValue(month, activity) > 0));
   const averageByActivity = new Map(selectedActivities.map((activity) => {
     const values = months.map((month) => getMonthlyFlowActivityValue(month, activity)).filter((value) => value > 0);
     const total = values.reduce((sum, value) => sum + value, 0);
     return [activity, values.length ? total / values.length : 0];
   }));
-  const averageEntries = canShowActivityAverage && DOM.monthlyFlowChartAverageToggle.checked
+  const averageEntries = canShowActivityAverage
     ? selectedActivities
       .map((activity) => ({ activity, average: averageByActivity.get(activity) || 0 }))
       .filter((entry) => entry.average > 0)
@@ -1145,12 +1137,13 @@ function formatMonthlyFlowAverage(value) {
 }
 
 function appendMonthlyFlowAverageValueLabel(average, lineY, color, plotLeft, plotRight, plotTop, plotBottom) {
+  const labelText = `Promedio: ${formatQuantity(Math.round(average))}`;
   const valueLabel = createMonthlyFlowSvgElement("text", {
     class: "monthly-flow-chart-average-value-label",
     fill: color,
     "text-anchor": "end",
-    "aria-label": `Promedio: ${formatQuantity(Math.round(average))}`
-  }, formatQuantity(Math.round(average)));
+    "aria-label": labelText
+  }, labelText);
   DOM.monthlyFlowChartSvg.appendChild(valueLabel);
 
   const labelWidth = valueLabel.getBBox().width;

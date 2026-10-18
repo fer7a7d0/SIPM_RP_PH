@@ -734,37 +734,6 @@ textarea:focus {
   margin-top: 12px;
 }
 
-.monthly-flow-chart-average-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 8px;
-}
-
-.monthly-flow-chart-average-toggle {
-  display: inline-flex;
-  align-items: center;
-  flex-direction: row;
-  gap: 7px;
-  color: var(--color-muted);
-  font-size: 0.84rem;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.monthly-flow-chart-average-toggle input {
-  width: 15px;
-  height: 15px;
-  margin: 0;
-  padding: 0;
-  accent-color: var(--color-primary);
-}
-
-.monthly-flow-chart-average-toggle.is-disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
 .monthly-flow-chart-year-label {
   display: inline-flex;
   align-items: center;
