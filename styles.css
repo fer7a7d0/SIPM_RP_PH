@@ -1194,8 +1194,13 @@ thead th {
 
 @media (max-width: 860px) {
   .app-header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .clock-block {
+    flex: 0 0 auto;
+    text-align: right;
   }
 
   .dashboard-header {
@@ -1278,10 +1283,6 @@ thead th {
     width: 100%;
   }
 
-  .clock-block {
-    text-align: left;
-  }
-
   .form-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1329,6 +1330,14 @@ thead th {
 }
 
 @media (max-width: 600px) {
+  .company-logo {
+    width: min(112px, 34vw);
+  }
+
+  .clock-block .value {
+    font-size: 0.92rem;
+  }
+
   .consultation-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
