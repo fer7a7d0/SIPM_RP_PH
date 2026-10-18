@@ -38,14 +38,25 @@
 
       <main>
         <nav class="tab-nav" role="tablist" aria-label="Secciones de la aplicacion">
-          <button id="tabCapture" class="tab-button active" role="tab" aria-selected="true" aria-controls="captureScreen">
-            Captura de Produccion
+          <button id="tabCapture" class="tab-button active" role="tab" aria-label="Captura de Producción" aria-selected="true" aria-controls="captureScreen">
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <rect x="5" y="4" width="14" height="17" rx="2"></rect>
+              <path d="M9 4.5h6M9 10h6m-6 4h6m-6 4h3"></path>
+            </svg>
+            <span class="tab-label">Captura</span>
           </button>
           <button id="tabConsulta" class="tab-button" role="tab" aria-selected="false" aria-controls="consultaScreen">
-            Consulta
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle>
+              <path d="m15.5 15.5 5 5"></path>
+            </svg>
+            <span class="tab-label">Consulta</span>
           </button>
           <button id="tabDashboard" class="tab-button" role="tab" aria-selected="false" aria-controls="dashboardScreen">
-            Dashboard
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M4 20V11h4v9m4 0V5h4v15m4 0v-7h4v7M2 20h21"></path>
+            </svg>
+            <span class="tab-label">Dashboard</span>
           </button>
         </nav>
 
