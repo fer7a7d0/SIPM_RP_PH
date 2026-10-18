@@ -901,9 +901,8 @@ function getMonthlyFlowActivityKey(activity) {
 }
 
 function getMonthlyFlowActivityColor(activity, activityNames) {
-  const colors = ["#0b6e4f", "#2f6fed", "#d97706", "#be123c", "#0891b2", "#65a30d", "#475569", "#c2410c", "#7c3aed", "#0f766e", "#ca8a04", "#0369a1", "#a21caf", "#be185d", "#15803d", "#b91c1c", "#4d7c0f", "#155e75", "#b45309", "#4338ca", "#9f1239", "#166534", "#0e7490", "#9a3412"];
   const index = Math.max(0, activityNames.indexOf(activity));
-  return colors[index % colors.length];
+  return `var(--chart-series-${(index % 12) + 1})`;
 }
 
 function renderMonthlyFlowActivityOptions(activityNames) {
