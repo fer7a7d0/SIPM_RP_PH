@@ -1108,7 +1108,7 @@ function drawMonthlyFlowChart() {
       addMonthlyFlowChartTooltipEvents(line, tooltipText);
       DOM.monthlyFlowChartSvg.appendChild(line);
 
-      appendMonthlyFlowAverageValueLabel(entry.average, lineY, color, plotLeft, width - plotRight, plotTop, plotBottom);
+      appendMonthlyFlowAverageValueLabel(entry.average, lineY, plotLeft, width - plotRight, plotTop, plotBottom);
     });
   }
 
@@ -1136,11 +1136,11 @@ function formatMonthlyFlowAverage(value) {
   return new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1 }).format(value);
 }
 
-function appendMonthlyFlowAverageValueLabel(average, lineY, color, plotLeft, plotRight, plotTop, plotBottom) {
+function appendMonthlyFlowAverageValueLabel(average, lineY, plotLeft, plotRight, plotTop, plotBottom) {
   const labelText = `Promedio: ${formatQuantity(Math.round(average))}`;
   const valueLabel = createMonthlyFlowSvgElement("text", {
     class: "monthly-flow-chart-average-value-label",
-    fill: color,
+    fill: "var(--color-text)",
     "text-anchor": "end",
     "aria-label": labelText
   }, labelText);
@@ -1173,6 +1173,19 @@ function appendMonthlyFlowAverageValueLabel(average, lineY, color, plotLeft, plo
 
   valueLabel.setAttribute("x", String(chosenX));
   valueLabel.setAttribute("y", String(labelY));
+  const textBounds = valueLabel.getBBox();
+  const paddingX = 5;
+  const paddingY = 3;
+  const background = createMonthlyFlowSvgElement("rect", {
+    class: "monthly-flow-chart-average-value-background",
+    x: String(textBounds.x - paddingX),
+    y: String(textBounds.y - paddingY),
+    width: String(textBounds.width + paddingX * 2),
+    height: String(textBounds.height + paddingY * 2),
+    rx: "4",
+    "aria-hidden": "true"
+  });
+  DOM.monthlyFlowChartSvg.insertBefore(background, valueLabel);
 }
 
 function addMonthlyFlowChartTooltipEvents(element, text) {

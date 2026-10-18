@@ -923,14 +923,17 @@ textarea:focus {
   stroke-width: 3;
 }
 
+.monthly-flow-chart-average-value-background {
+  fill: var(--color-panel);
+  stroke: var(--chart-gridline);
+  stroke-width: 1px;
+  pointer-events: none;
+}
+
 .monthly-flow-chart-average-value-label {
   font-family: inherit;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  paint-order: stroke;
-  stroke: var(--color-panel);
-  stroke-linejoin: round;
-  stroke-width: 3px;
   pointer-events: none;
 }
 
