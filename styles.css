@@ -1355,6 +1355,10 @@ thead th {
 }
 
 @media (max-width: 600px) {
+  .consultation-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   main {
     padding-bottom: calc(76px + env(safe-area-inset-bottom));
   }
