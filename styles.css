@@ -667,8 +667,19 @@ textarea:focus {
   margin: 6px 0;
 }
 
+.kpi-dual-row > * {
+  min-width: 0;
+}
+
+.kpi-dual-row span {
+  overflow-wrap: anywhere;
+}
+
 .kpi-dual-row strong {
+  max-width: 100%;
   font-size: 1.15rem;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .kpi-stat-list {
