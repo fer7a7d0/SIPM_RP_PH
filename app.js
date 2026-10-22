@@ -128,6 +128,7 @@ const DOM = {
   kpiAverageDailyMonth: document.getElementById("kpiAverageDailyMonth"),
   kpiTotalMonth: document.getElementById("kpiTotalMonth"),
   kpiBalanceDay: document.getElementById("kpiBalanceDay"),
+  kpiBalanceDescription: document.getElementById("kpiBalanceDescription"),
   kpiMonthReception: document.getElementById("kpiMonthReception"),
   kpiMonthDelivered: document.getElementById("kpiMonthDelivered"),
   kpiMonthPH: document.getElementById("kpiMonthPH"),
@@ -548,6 +549,7 @@ function updateClock() {
   const now = new Date();
   DOM.currentDate.textContent = now.toLocaleDateString("es-MX", { timeZone: APP_TIME_ZONE });
   DOM.currentTime.textContent = now.toLocaleTimeString("es-MX", { timeZone: APP_TIME_ZONE });
+  DOM.kpiBalanceDescription.textContent = `Cilindros por trabajar al ${formatDateForMexico(formatDateKey(now))}`;
 }
 
 function activateScreen(target) {
