@@ -682,14 +682,6 @@ textarea:focus {
   text-align: right;
 }
 
-.kpi-stat-list {
-  margin: 4px 0 8px;
-}
-
-.kpi-stat-list li {
-  padding: 5px 0;
-}
-
 .kpi-operator-table-wrap {
   margin: 4px 0 8px;
 }
@@ -702,6 +694,20 @@ textarea:focus {
 .kpi-operator-table th,
 .kpi-operator-table td {
   padding: 5px 4px;
+}
+
+.kpi-operator-table thead th {
+  background: transparent;
+}
+
+.kpi-operator-table tfoot {
+  border-top: 2px solid var(--color-primary);
+  font-weight: 700;
+}
+
+.kpi-operator-table tfoot th {
+  text-align: left;
+  background: transparent;
 }
 
 .kpi-operator-table th:first-child,

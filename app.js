@@ -140,8 +140,10 @@ const DOM = {
   monthlyFlowChartPlot: document.getElementById("monthlyFlowChartPlot"),
   monthlyFlowChartSvg: document.getElementById("monthlyFlowChartSvg"),
   monthlyFlowChartTooltip: document.getElementById("monthlyFlowChartTooltip"),
-  shiftListMonth: document.getElementById("shiftListMonth"),
-  operatorTableBodyMonth: document.getElementById("operatorTableBodyMonth")
+  shiftTableBodyMonth: document.getElementById("shiftTableBodyMonth"),
+  shiftTableTotalMonth: document.getElementById("shiftTableTotalMonth"),
+  operatorTableBodyMonth: document.getElementById("operatorTableBodyMonth"),
+  operatorTableTotalMonth: document.getElementById("operatorTableTotalMonth")
 };
 
 function initApp() {
@@ -808,8 +810,11 @@ function renderDashboard() {
     DOM.monthSelector.value = APP_STATE.dashboard.monthKey;
   }
 
-  renderStatList(DOM.shiftListMonth, APP_STATE.shiftOptions, APP_STATE.dashboard.byShiftMonth);
+  renderShiftTable(DOM.shiftTableBodyMonth, APP_STATE.shiftOptions, APP_STATE.dashboard.byShiftMonth);
   renderOperatorTable(DOM.operatorTableBodyMonth, APP_STATE.dashboard.byOperatorMonth);
+  const totalMonth = formatQuantity(APP_STATE.dashboard.totalMonth);
+  DOM.shiftTableTotalMonth.textContent = totalMonth;
+  DOM.operatorTableTotalMonth.textContent = totalMonth;
 }
 
 function renderMonthlyFlowChart() {
@@ -1310,23 +1315,28 @@ function onMonthlyFlowChartOutsideClick(event) {
   }
 }
 
-function renderStatList(targetElement, keys, valuesMap) {
-  targetElement.innerHTML = "";
+function renderShiftTable(targetElement, keys, valuesMap) {
+  targetElement.replaceChildren();
   keys.forEach((key) => {
-    const li = document.createElement("li");
-    li.innerHTML = `<span>${key}</span><strong>${formatQuantity(valuesMap[key] || 0)}</strong>`;
-    targetElement.appendChild(li);
+    const row = document.createElement("tr");
+    const shiftCell = document.createElement("td");
+    const quantityCell = document.createElement("td");
+    shiftCell.textContent = key;
+    quantityCell.textContent = formatQuantity(valuesMap[key] || 0);
+    row.append(shiftCell, quantityCell);
+    targetElement.appendChild(row);
   });
 }
 
 function renderOperatorTable(targetElement, rows) {
-  targetElement.innerHTML = "";
+  targetElement.replaceChildren();
   rows.forEach((item) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.operator}</td>
-      <td>${formatQuantity(item.total)}</td>
-    `;
+    const operatorCell = document.createElement("td");
+    const quantityCell = document.createElement("td");
+    operatorCell.textContent = item.operator;
+    quantityCell.textContent = formatQuantity(item.total);
+    tr.append(operatorCell, quantityCell);
     targetElement.appendChild(tr);
   });
 }

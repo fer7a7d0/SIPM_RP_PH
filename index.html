@@ -222,7 +222,23 @@
             <div class="kpi-grid kpi-grid-breakdown">
               <section class="kpi-card balance-highlight">
                 <p>Produccion por Turno</p>
-                <ul id="shiftListMonth" class="stat-list kpi-stat-list"></ul>
+                <div class="table-wrap kpi-operator-table-wrap">
+                  <table class="kpi-operator-table">
+                    <thead>
+                      <tr>
+                        <th>Turno</th>
+                        <th>Cilindros</th>
+                      </tr>
+                    </thead>
+                    <tbody id="shiftTableBodyMonth"></tbody>
+                    <tfoot>
+                      <tr>
+                        <th scope="row">Total</th>
+                        <td id="shiftTableTotalMonth">0</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               </section>
               <section class="kpi-card month-highlight">
                 <p>Produccion por Operador</p>
@@ -235,6 +251,12 @@
                       </tr>
                     </thead>
                     <tbody id="operatorTableBodyMonth"></tbody>
+                    <tfoot>
+                      <tr>
+                        <th scope="row">Total</th>
+                        <td id="operatorTableTotalMonth">0</td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </section>
