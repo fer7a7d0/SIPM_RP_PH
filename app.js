@@ -1148,8 +1148,14 @@ function appendMonthlyFlowAverageValueLabel(average, lineY, plotLeft, plotRight,
 
   const labelWidth = valueLabel.getBBox().width;
   const labelHeight = valueLabel.getBBox().height;
+  const paddingX = 5;
+  const paddingY = 3;
+  const lineGap = 6;
+  const placeAboveLine = lineY - plotTop >= labelHeight + paddingY * 2 + lineGap;
+  let labelY = placeAboveLine
+    ? lineY - paddingY - lineGap
+    : lineY + labelHeight + paddingY + lineGap;
   const candidateXs = [plotRight - 5, plotLeft + (plotRight - plotLeft) * 0.78, plotLeft + (plotRight - plotLeft) * 0.55, plotLeft + (plotRight - plotLeft) * 0.32];
-  const labelY = Math.max(12, lineY - 4);
   const otherLabels = [...DOM.monthlyFlowChartSvg.querySelectorAll(".monthly-flow-chart-axis-label, .monthly-flow-chart-month-label")]
     .map((element) => element.getBoundingClientRect());
   let chosenX = candidateXs[0];
@@ -1173,9 +1179,15 @@ function appendMonthlyFlowAverageValueLabel(average, lineY, plotLeft, plotRight,
 
   valueLabel.setAttribute("x", String(chosenX));
   valueLabel.setAttribute("y", String(labelY));
-  const textBounds = valueLabel.getBBox();
-  const paddingX = 5;
-  const paddingY = 3;
+  let textBounds = valueLabel.getBBox();
+  const lineClearance = placeAboveLine
+    ? lineY - lineGap - (textBounds.y + textBounds.height + paddingY)
+    : textBounds.y - paddingY - lineY - lineGap;
+  if (lineClearance < 0) {
+    labelY += placeAboveLine ? lineClearance : -lineClearance;
+    valueLabel.setAttribute("y", String(labelY));
+    textBounds = valueLabel.getBBox();
+  }
   const background = createMonthlyFlowSvgElement("rect", {
     class: "monthly-flow-chart-average-value-background",
     x: String(textBounds.x - paddingX),
