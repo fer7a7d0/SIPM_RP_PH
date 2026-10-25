@@ -1229,6 +1229,7 @@ function appendMonthlyFlowBar(month, monthName, value, seriesLabel, color, x, wi
   const barHeight = maxValue ? (value / maxValue) * plotHeight : 0;
   const minimumHitHeight = 10;
   const rectHeight = value > 0 ? Math.max(barHeight, 1) : minimumHitHeight;
+  const chartLabel = getMonthlyFlowActivityTooltipLabel(seriesLabel);
   const bar = createMonthlyFlowSvgElement("rect", {
     x,
     y: plotBottom - rectHeight,
@@ -1238,11 +1239,10 @@ function appendMonthlyFlowBar(month, monthName, value, seriesLabel, color, x, wi
     class: `monthly-flow-chart-bar ${value > 0 ? "" : "monthly-flow-chart-zero-bar"}`,
     tabindex: value > 0 ? 0 : -1,
     role: "img",
-    "aria-label": `${monthName}: ${seriesLabel}, ${formatQuantity(value)} cilindros`
+    "aria-label": `${monthName}: ${chartLabel}, ${formatQuantity(value)} cilindros`
   });
   bar.style.fill = value > 0 ? color : "transparent";
-  const tooltipLabel = getMonthlyFlowActivityTooltipLabel(seriesLabel);
-  const tooltipText = `${tooltipLabel}: ${formatQuantity(value)} cilindros`;
+  const tooltipText = `${chartLabel}: ${formatQuantity(value)} cilindros`;
   addMonthlyFlowChartTooltipEvents(bar, tooltipText);
   DOM.monthlyFlowChartSvg.appendChild(bar);
 }
@@ -1250,10 +1250,10 @@ function appendMonthlyFlowBar(month, monthName, value, seriesLabel, color, x, wi
 function getMonthlyFlowActivityTooltipLabel(activity) {
   const normalized = normalizeMonthlyFlowActivity(activity);
   if (normalized.startsWith("01 recepcion de cilindros")) {
-    return "Recepción";
+    return "Entradas";
   }
   if (normalized.startsWith("11 entrega de cilindros")) {
-    return "Entregados";
+    return "Salidas";
   }
   if (normalized === "05 ph" || normalized === "prueba hidrostatica (ph)") {
     return "PH";
