@@ -337,10 +337,25 @@ textarea:focus {
   margin: 2px 0 0;
 }
 
+.dashboard-panel {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+}
+
+.dashboard-panel > .dashboard-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--chart-gridline);
+}
+
 .dashboard-controls {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.dashboard-controls .month-filter-input {
+  min-width: 150px;
 }
 
 .month-filter-label {
@@ -623,25 +638,75 @@ textarea:focus {
 }
 
 .kpi-grid {
-  margin-top: 14px;
   display: grid;
-  gap: 12px;
+  gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .kpi-grid-breakdown {
-  margin-top: 12px;
+  align-items: stretch;
 }
 
 .kpi-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   background: var(--kpi-highlight-bg);
-  border-left: 7px solid var(--kpi-highlight-accent);
+  border: 1px solid var(--chart-gridline);
+  border-left: 4px solid var(--kpi-highlight-accent);
   border-radius: var(--radius-md);
-  padding: 14px;
+  padding: 16px;
+}
+
+.kpi-card.monthly-activity-highlight {
+  grid-column: 1 / -1;
+}
+
+.kpi-card > p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.kpi-card > small {
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--color-muted);
 }
 
 .kpi-card h3 {
-  font-size: 2.2rem;
+  margin-top: 6px;
+  font-size: clamp(1.9rem, 4vw, 2.35rem);
+  line-height: 1.05;
+}
+
+.kpi-monthly-activity {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.kpi-monthly-activity-item {
+  min-width: 0;
+}
+
+.kpi-monthly-activity-item + .kpi-monthly-activity-item {
+  border-left: 1px solid var(--chart-gridline);
+  padding-left: 14px;
+}
+
+.kpi-monthly-activity-item p {
+  margin: 0 0 2px;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.kpi-monthly-activity-item small {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-muted);
 }
 
 .kpi-card.month-highlight {
@@ -664,7 +729,13 @@ textarea:focus {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin: 6px 0;
+  margin: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--chart-gridline);
+}
+
+.kpi-dual-row:last-child {
+  border-bottom: 0;
 }
 
 .kpi-dual-row > * {
@@ -683,7 +754,8 @@ textarea:focus {
 }
 
 .kpi-operator-table-wrap {
-  margin: 4px 0 8px;
+  width: 100%;
+  margin: 8px 0 0;
 }
 
 .kpi-operator-table {
@@ -724,9 +796,12 @@ textarea:focus {
 }
 
 .monthly-flow-chart-panel {
-  margin-top: 14px;
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  min-width: 0;
+  margin-top: 0;
+  background: var(--color-panel);
+  border-color: var(--chart-gridline);
+  border-radius: var(--radius-md);
+  padding: 16px;
 }
 
 .monthly-flow-chart-heading {
@@ -748,7 +823,7 @@ textarea:focus {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px 16px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .monthly-flow-chart-year-label {
@@ -1280,8 +1355,14 @@ thead th {
   }
 
   .dashboard-controls {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
     width: 100%;
-    flex-wrap: wrap;
+  }
+
+  .dashboard-controls .month-filter-input {
+    min-width: 0;
   }
 
   .consultation-controls {
@@ -1383,11 +1464,11 @@ thead th {
     height: 46px;
   }
 
-  .kpi-grid {
+  .dashboard-panel .kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .kpi-grid-breakdown {
+  .dashboard-panel .kpi-grid-breakdown {
     grid-template-columns: 1fr;
   }
 
@@ -1401,6 +1482,48 @@ thead th {
 }
 
 @media (max-width: 600px) {
+  .dashboard-panel {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .dashboard-panel .kpi-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .dashboard-panel .kpi-grid-breakdown {
+    gap: 10px;
+  }
+
+  .dashboard-controls {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .dashboard-controls .btn-secondary {
+    grid-column: 1 / -1;
+  }
+
+  .monthly-flow-chart-panel {
+    padding: 12px;
+  }
+
+  .kpi-monthly-activity {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-monthly-activity-item + .kpi-monthly-activity-item {
+    border-top: 1px solid var(--chart-gridline);
+    border-left: 0;
+    padding-top: 10px;
+    padding-left: 0;
+  }
+
+  .kpi-card.flow-highlight {
+    grid-column: 1 / -1;
+  }
+
   .company-logo {
     width: min(120px, 35vw);
   }

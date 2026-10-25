@@ -147,7 +147,7 @@
           <article class="panel dashboard-panel">
             <div class="dashboard-header">
               <div class="dashboard-title">
-                <h2>Indicadores de Produccion</h2>
+                <h2>Indicadores de Producción</h2>
                 <p class="panel-note dashboard-note">Resumen del mes seleccionado y del flujo de cilindros.</p>
               </div>
               <div class="dashboard-controls">
@@ -158,20 +158,10 @@
             </div>
 
             <div class="kpi-grid">
-              <div class="kpi-card highlight">
-                <p>Promedio diario mensual</p>
-                <h3 id="kpiAverageDailyMonth">0</h3>
-                <small>Actividades realizadas</small>
-              </div>
               <div class="kpi-card balance-highlight">
                 <p>Backlog</p>
                 <h3 id="kpiBalanceDay">0</h3>
                 <small id="kpiBalanceDescription"></small>
-              </div>
-              <div class="kpi-card month-highlight">
-                <p>Total mensual</p>
-                <h3 id="kpiTotalMonth">0</h3>
-                <small>Actividades realizadas</small>
               </div>
               <div class="kpi-card flow-highlight">
                 <p>Flujo mensual de cilindros</p>
@@ -219,9 +209,27 @@
               </div>
             </section>
 
+            <div class="kpi-grid">
+              <div class="kpi-card highlight monthly-activity-highlight">
+                <p>Actividad mensual</p>
+                <div class="kpi-monthly-activity">
+                  <div class="kpi-monthly-activity-item">
+                    <p>Promedio diario</p>
+                    <h3 id="kpiAverageDailyMonth">0</h3>
+                    <small>Actividades realizadas por día</small>
+                  </div>
+                  <div class="kpi-monthly-activity-item">
+                    <p>Total del mes</p>
+                    <h3 id="kpiTotalMonth">0</h3>
+                    <small>Actividades realizadas en el mes</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="kpi-grid kpi-grid-breakdown">
               <section class="kpi-card balance-highlight">
-                <p>Produccion por Turno</p>
+                <p>Producción por turno</p>
                 <div class="table-wrap kpi-operator-table-wrap">
                   <table class="kpi-operator-table">
                     <thead>
@@ -241,7 +249,7 @@
                 </div>
               </section>
               <section class="kpi-card month-highlight">
-                <p>Produccion por Operador</p>
+                <p>Producción por operador</p>
                 <div class="table-wrap kpi-operator-table-wrap">
                   <table class="kpi-operator-table">
                     <thead>
