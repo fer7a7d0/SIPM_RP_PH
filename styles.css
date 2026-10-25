@@ -358,11 +358,6 @@ textarea:focus {
   min-width: 150px;
 }
 
-.month-filter-label {
-  font-weight: 600;
-  color: var(--color-muted);
-}
-
 .month-filter-input {
   border: 1px solid #bcccdc;
   border-radius: var(--radius-md);
@@ -1356,7 +1351,7 @@ thead th {
 
   .dashboard-controls {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     width: 100%;
   }
@@ -1497,7 +1492,7 @@ thead th {
   }
 
   .dashboard-controls {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
   }
 
