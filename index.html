@@ -151,8 +151,30 @@
                 <p class="panel-note dashboard-note">Resumen del mes seleccionado y del flujo de cilindros.</p>
               </div>
               <div class="dashboard-controls">
-                <input id="monthSelector" class="month-filter-input" type="month" aria-label="Mes" />
-                <button id="refreshDashboardButton" type="button" class="btn-secondary">Actualizar</button>
+                <div class="date-picker-control dashboard-month-picker">
+                  <input id="dashboardMonthDisplay" class="date-display-input" type="text" readonly aria-label="Elegir mes del dashboard" />
+                  <input id="monthSelector" type="month" aria-hidden="true" hidden />
+                  <button id="dashboardMonthPickerButton" class="date-picker-button" type="button" aria-label="Elegir mes" title="Elegir mes" aria-expanded="false">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                      <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+                      <path d="M8 3v4m8-4v4M4 9h16"></path>
+                    </svg>
+                  </button>
+                  <div id="dashboardMonthCalendar" class="date-picker-calendar dashboard-month-calendar" role="dialog" aria-label="Elegir mes" hidden>
+                    <div class="calendar-header">
+                      <button id="dashboardMonthPreviousYear" class="calendar-nav-button" type="button" aria-label="Año anterior">&lsaquo;</button>
+                      <strong id="dashboardMonthYearLabel"></strong>
+                      <button id="dashboardMonthNextYear" class="calendar-nav-button" type="button" aria-label="Año siguiente">&rsaquo;</button>
+                    </div>
+                    <div id="dashboardMonthGrid" class="calendar-month-grid"></div>
+                  </div>
+                </div>
+                <button id="refreshDashboardButton" class="btn-secondary dashboard-refresh-button" type="button" aria-label="Actualizar indicadores" title="Actualizar indicadores">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                    <path d="M20 7v5h-5M4 17v-5h5"></path>
+                    <path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"></path>
+                  </svg>
+                </button>
               </div>
             </div>
 

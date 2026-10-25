@@ -48,6 +48,7 @@ const APP_STATE = {
   },
   productionCalendarMonth: "",
   recordEditorCalendarMonth: "",
+  dashboardMonthPickerYear: "",
   monthlyFlowChartYear: "",
   duplicateCache: new Set()
 };
@@ -124,6 +125,13 @@ const DOM = {
   dashboardScreen: document.getElementById("dashboardScreen"),
   consultaScreen: document.getElementById("consultaScreen"),
   monthSelector: document.getElementById("monthSelector"),
+  dashboardMonthDisplay: document.getElementById("dashboardMonthDisplay"),
+  dashboardMonthPickerButton: document.getElementById("dashboardMonthPickerButton"),
+  dashboardMonthCalendar: document.getElementById("dashboardMonthCalendar"),
+  dashboardMonthYearLabel: document.getElementById("dashboardMonthYearLabel"),
+  dashboardMonthGrid: document.getElementById("dashboardMonthGrid"),
+  dashboardMonthPreviousYear: document.getElementById("dashboardMonthPreviousYear"),
+  dashboardMonthNextYear: document.getElementById("dashboardMonthNextYear"),
   refreshDashboardButton: document.getElementById("refreshDashboardButton"),
   kpiAverageDailyMonth: document.getElementById("kpiAverageDailyMonth"),
   kpiTotalMonth: document.getElementById("kpiTotalMonth"),
@@ -160,12 +168,18 @@ function initApp() {
 function initializeDashboardFilters() {
   if (DOM.monthSelector) {
     DOM.monthSelector.value = getCurrentMonthKey();
+    syncDashboardMonthDisplay();
   }
 }
 
 function bindEvents() {
   DOM.productionForm.addEventListener("submit", onSubmitProduction);
   DOM.productionDateDisplay.addEventListener("click", () => openConsultationDateCalendar("production"));
+  DOM.dashboardMonthDisplay.addEventListener("click", openDashboardMonthCalendar);
+  DOM.dashboardMonthPickerButton.addEventListener("click", openDashboardMonthCalendar);
+  DOM.dashboardMonthPreviousYear.addEventListener("click", () => shiftDashboardMonthPickerYear(-1));
+  DOM.dashboardMonthNextYear.addEventListener("click", () => shiftDashboardMonthPickerYear(1));
+  DOM.dashboardMonthGrid.addEventListener("click", onDashboardMonthCalendarClick);
   DOM.consultationStartDateDisplay.addEventListener("click", () => openConsultationDateCalendar("start"));
   DOM.consultationEndDateDisplay.addEventListener("click", () => openConsultationDateCalendar("end"));
   DOM.downloadCsvButton.addEventListener("click", exportDailyCsvFromServer);
@@ -231,6 +245,88 @@ function getCurrentMonthKey() {
   return formatDateKey(new Date()).slice(0, 7);
 }
 
+function syncDashboardMonthDisplay() {
+  const match = String(DOM.monthSelector.value || "").match(/^(\d{4})-(\d{2})$/);
+  if (!match) {
+    DOM.dashboardMonthDisplay.value = "";
+    return;
+  }
+  const monthDate = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
+  DOM.dashboardMonthDisplay.value = new Intl.DateTimeFormat("es-MX", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC"
+  }).format(monthDate);
+}
+
+function openDashboardMonthCalendar() {
+  if (!DOM.dashboardMonthCalendar.hidden) {
+    closeConsultationDateCalendars();
+    return;
+  }
+  closeConsultationDateCalendars();
+  const monthKey = /^\d{4}-\d{2}$/.test(DOM.monthSelector.value)
+    ? DOM.monthSelector.value
+    : getCurrentMonthKey();
+  APP_STATE.dashboardMonthPickerYear = Number(monthKey.slice(0, 4));
+  DOM.dashboardMonthCalendar.hidden = false;
+  DOM.dashboardMonthPickerButton.setAttribute("aria-expanded", "true");
+  renderDashboardMonthCalendar();
+  positionConsultationDateCalendar(DOM.dashboardMonthCalendar);
+}
+
+function renderDashboardMonthCalendar() {
+  const year = APP_STATE.dashboardMonthPickerYear;
+  const selectedMonth = DOM.monthSelector.value;
+  const currentMonth = getCurrentMonthKey();
+  DOM.dashboardMonthYearLabel.textContent = String(year);
+  DOM.dashboardMonthPreviousYear.disabled = year <= 1;
+  DOM.dashboardMonthNextYear.disabled = year >= 9999;
+  DOM.dashboardMonthGrid.replaceChildren();
+
+  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+    const monthKey = `${String(year).padStart(4, "0")}-${String(monthIndex + 1).padStart(2, "0")}`;
+    const monthDate = new Date(Date.UTC(year, monthIndex, 1));
+    const monthName = new Intl.DateTimeFormat("es-MX", {
+      month: "long",
+      timeZone: "UTC"
+    }).format(monthDate);
+    const monthButton = document.createElement("button");
+    monthButton.type = "button";
+    monthButton.className = "calendar-month";
+    monthButton.dataset.month = monthKey;
+    monthButton.textContent = monthName;
+    monthButton.setAttribute("aria-label", `${monthName} de ${year}`);
+    if (monthKey === selectedMonth) {
+      monthButton.classList.add("selected");
+      monthButton.setAttribute("aria-pressed", "true");
+    }
+    if (monthKey === currentMonth) {
+      monthButton.classList.add("today");
+    }
+    DOM.dashboardMonthGrid.appendChild(monthButton);
+  }
+}
+
+function shiftDashboardMonthPickerYear(delta) {
+  APP_STATE.dashboardMonthPickerYear = Math.min(
+    9999,
+    Math.max(1, APP_STATE.dashboardMonthPickerYear + delta)
+  );
+  renderDashboardMonthCalendar();
+}
+
+function onDashboardMonthCalendarClick(event) {
+  const monthButton = event.target.closest("button[data-month]");
+  if (!monthButton) {
+    return;
+  }
+  DOM.monthSelector.value = monthButton.dataset.month;
+  syncDashboardMonthDisplay();
+  closeConsultationDateCalendars();
+  DOM.monthSelector.dispatchEvent(new Event("change"));
+}
+
 function formatDateKey(date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: APP_TIME_ZONE,
@@ -272,7 +368,7 @@ function openConsultationDateCalendar(which) {
 }
 
 function positionOpenConsultationDateCalendars() {
-  [DOM.consultationStartDateCalendar, DOM.consultationEndDateCalendar, DOM.productionDateCalendar, DOM.recordEditorDateCalendar]
+  [DOM.consultationStartDateCalendar, DOM.consultationEndDateCalendar, DOM.productionDateCalendar, DOM.recordEditorDateCalendar, DOM.dashboardMonthCalendar]
     .filter((calendar) => !calendar.hidden)
     .forEach(positionConsultationDateCalendar);
 }
@@ -294,10 +390,12 @@ function closeConsultationDateCalendars() {
   DOM.consultationEndDateCalendar.hidden = true;
   DOM.productionDateCalendar.hidden = true;
   DOM.recordEditorDateCalendar.hidden = true;
+  DOM.dashboardMonthCalendar.hidden = true;
   DOM.consultationStartDatePickerButton.setAttribute("aria-expanded", "false");
   DOM.consultationEndDatePickerButton.setAttribute("aria-expanded", "false");
   DOM.productionDatePickerButton.setAttribute("aria-expanded", "false");
   DOM.recordEditorDatePickerButton.setAttribute("aria-expanded", "false");
+  DOM.dashboardMonthPickerButton.setAttribute("aria-expanded", "false");
 }
 
 function onConsultationCalendarOutsideClick(event) {
@@ -811,6 +909,7 @@ function renderDashboard() {
   if (DOM.monthSelector.value !== APP_STATE.dashboard.monthKey && APP_STATE.dashboard.monthKey) {
     DOM.monthSelector.value = APP_STATE.dashboard.monthKey;
   }
+  syncDashboardMonthDisplay();
 
   renderShiftTable(DOM.shiftTableBodyMonth, APP_STATE.shiftOptions, APP_STATE.dashboard.byShiftMonth);
   renderOperatorTable(DOM.operatorTableBodyMonth, APP_STATE.dashboard.byOperatorMonth);

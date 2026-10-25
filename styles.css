@@ -354,8 +354,38 @@ textarea:focus {
   gap: 8px;
 }
 
-.dashboard-controls .month-filter-input {
-  min-width: 150px;
+.dashboard-month-picker {
+  width: min(220px, 100%);
+  flex: 0 1 220px;
+}
+
+.dashboard-refresh-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 10px;
+  border-radius: 50%;
+}
+
+.dashboard-refresh-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.dashboard-refresh-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.dashboard-month-calendar {
+  width: min(276px, calc(100vw - 32px));
 }
 
 .month-filter-input {
@@ -512,7 +542,8 @@ textarea:focus {
 }
 
 .calendar-nav-button:hover,
-.calendar-day:hover {
+.calendar-day:hover,
+.calendar-month:hover {
   background: rgba(11, 110, 79, 0.12);
 }
 
@@ -520,6 +551,26 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 2px;
+}
+
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calendar-month {
+  min-width: 0;
+  min-height: 40px;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-text);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  text-transform: capitalize;
 }
 
 .calendar-weekday,
@@ -542,17 +593,20 @@ textarea:focus {
   font-size: 0.88rem;
 }
 
-.calendar-day.today {
+.calendar-day.today,
+.calendar-month.today {
   outline: 1px solid var(--color-primary);
   outline-offset: -2px;
 }
 
-.calendar-day.selected {
+.calendar-day.selected,
+.calendar-month.selected {
   color: #ffffff;
   background: var(--color-primary);
 }
 
-.calendar-day.selected:hover {
+.calendar-day.selected:hover,
+.calendar-month.selected:hover {
   background: var(--color-primary-dark);
 }
 
@@ -1246,12 +1300,15 @@ thead th {
   }
 
   .calendar-nav-button:hover,
-  .calendar-day:hover {
+  .calendar-day:hover,
+  .calendar-month:hover {
     background: rgba(48, 179, 127, 0.18);
   }
 
   .calendar-day.selected,
-  .calendar-day.selected:hover {
+  .calendar-day.selected:hover,
+  .calendar-month.selected,
+  .calendar-month.selected:hover {
     color: #071b14;
   }
 
@@ -1356,7 +1413,8 @@ thead th {
     width: 100%;
   }
 
-  .dashboard-controls .month-filter-input {
+  .dashboard-month-picker {
+    width: 100%;
     min-width: 0;
   }
 
@@ -1492,12 +1550,12 @@ thead th {
   }
 
   .dashboard-controls {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
   }
 
-  .dashboard-controls .btn-secondary {
-    grid-column: 1 / -1;
+  .dashboard-month-picker {
+    width: 100%;
   }
 
   .monthly-flow-chart-panel {
