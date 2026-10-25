@@ -647,7 +647,7 @@ function updateClock() {
   const now = new Date();
   DOM.currentDate.textContent = now.toLocaleDateString("es-MX", { timeZone: APP_TIME_ZONE });
   DOM.currentTime.textContent = now.toLocaleTimeString("es-MX", { timeZone: APP_TIME_ZONE });
-  DOM.kpiBalanceDescription.textContent = `Cilindros por trabajar al ${formatDateForMexico(formatDateKey(now))}`;
+  DOM.kpiBalanceDescription.textContent = `Cilindros pendientes de trabajar al ${formatDateForMexico(formatDateKey(now))}`;
 }
 
 function activateScreen(target) {
